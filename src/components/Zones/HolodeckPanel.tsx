@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Compass, Sparkles, TrendingUp, Loader2, ArrowRight } from 'lucide-react';
+import { Compass, Sparkles, TrendingUp, Loader2, X } from 'lucide-react';
 import { simulateSkillWithRadha } from '../../services/ai';
 import { speakAsAgent } from '../../services/voice';
 import { CareerSimulation, UserProfile } from '../../types';
 
 interface HolodeckPanelProps {
   userProfile: UserProfile;
+  onClose: () => void;
 }
 
-export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
+export function HolodeckPanel({ userProfile, onClose }: HolodeckPanelProps) {
   const [skill, setSkill] = useState('');
   const [simulations, setSimulations] = useState<CareerSimulation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +24,7 @@ export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
       const result = await simulateSkillWithRadha(
         userProfile.targetRole || 'Software Engineer',
         userProfile.skills,
-        70, // Base match score baseline
+        70,
         skillToTest.trim()
       );
 
@@ -41,21 +42,30 @@ export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
   const quickSkills = ['Kubernetes', 'System Design', 'Rust', 'GraphQL', 'AWS Cloud', 'Docker'];
 
   return (
-    <div className="glass-panel p-6 rounded-2xl max-w-2xl w-full text-left max-h-[80vh] overflow-y-auto">
+    <div className="glass-panel p-6 rounded-2xl max-w-xl w-full text-left max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-5">
         <div>
-          <span className="text-xs font-mono tracking-widest text-[#7fff6e] uppercase flex items-center gap-1.5">
+          <span className="text-xs font-mono tracking-widest text-cyan-600 uppercase flex items-center gap-1.5 font-semibold">
             <Compass className="w-3.5 h-3.5" /> Deck 04 // Quantum HoloDeck
           </span>
-          <h2 className="font-display italic text-2xl text-[#f0efe8]">Radha's What-If Simulator</h2>
+          <h2 className="font-display italic text-2xl text-slate-900">Radha's What-If Simulator</h2>
         </div>
-        <span className="text-[10px] font-mono px-3 py-1 bg-accent/10 text-accent border border-accent/20 rounded-full">
-          Trajectory Forecasting
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono px-3 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-full font-semibold">
+            Trajectory Forecasting
+          </span>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors ml-1"
+            title="Close (ESC)"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      <p className="text-xs text-muted mb-4 leading-relaxed">
+      <p className="text-xs text-slate-600 mb-4 leading-relaxed">
         Test how learning high-demand technologies branches out your career timeline, jumps your role match percentage, and unlocks senior titles.
       </p>
 
@@ -63,7 +73,7 @@ export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
       <div className="flex gap-2 mb-3">
         <input
           type="text"
-          className="flex-1 bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-accent"
+          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-cyan-500 focus:bg-white"
           placeholder="e.g. Apache Kafka, Go, Large Language Models..."
           value={skill}
           onChange={(e) => setSkill(e.target.value)}
@@ -74,7 +84,7 @@ export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
         <button
           onClick={() => handleSimulate(skill)}
           disabled={isLoading || !skill.trim()}
-          className="px-5 py-2 bg-accent hover:bg-accent/90 disabled:opacity-40 text-bg font-semibold text-xs rounded-lg flex items-center gap-1.5 transition-all shadow-lg shadow-accent/20"
+          className="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-40 text-white font-semibold text-xs rounded-lg flex items-center gap-1.5 transition-all shadow-lg shadow-cyan-500/20"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           <span>Simulate</span>
@@ -83,13 +93,13 @@ export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
 
       {/* Quick Pills */}
       <div className="flex flex-wrap gap-1.5 mb-5 items-center">
-        <span className="text-[10px] font-mono text-muted mr-1">Quick Picks:</span>
+        <span className="text-[10px] font-mono text-slate-500 mr-1 font-semibold">Quick Picks:</span>
         {quickSkills.map((qs, i) => (
           <button
             key={i}
             onClick={() => handleSimulate(qs)}
             disabled={isLoading}
-            className="text-[10px] font-mono bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-0.5 rounded text-muted hover:text-text transition-colors"
+            className="text-[10px] font-mono bg-slate-100 hover:bg-cyan-50 border border-slate-200 px-2 py-0.5 rounded text-slate-600 hover:text-cyan-700 transition-colors"
           >
             + {qs}
           </button>
@@ -97,7 +107,7 @@ export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
       </div>
 
       {error && (
-        <div className="p-3 bg-brutal/10 border border-brutal/30 text-brutal text-xs rounded-lg mb-4">
+        <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg mb-4">
           {error}
         </div>
       )}
@@ -105,32 +115,32 @@ export function HolodeckPanel({ userProfile }: HolodeckPanelProps) {
       {/* Simulation Feed */}
       <div className="space-y-3">
         {simulations.map((sim, i) => (
-          <div key={i} className="p-4 bg-surface2 rounded-xl border border-white/10 animate-fade-in space-y-2">
+          <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-200 animate-fade-in space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-text flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-accent" />
+              <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
                 {sim.skill}
               </span>
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/20">
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
                 {sim.scoreDelta > 0 ? `+${sim.scoreDelta}%` : `${sim.scoreDelta}%`} → {sim.newScore}%
               </span>
             </div>
-            <p className="text-xs text-muted leading-relaxed">{sim.impact}</p>
+            <p className="text-xs text-slate-600 leading-relaxed">{sim.impact}</p>
             <div className="flex flex-wrap gap-1 pt-1">
               {sim.newOpportunities.map((op, idx) => (
-                <span key={idx} className="text-[10px] font-mono bg-accent2/10 text-accent2 border border-accent2/20 px-2 py-0.5 rounded">
+                <span key={idx} className="text-[10px] font-mono bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-semibold">
                   ✦ {op}
                 </span>
               ))}
             </div>
-            <p className="text-[11px] font-serif italic text-muted pt-1">
+            <p className="text-[11px] font-serif italic text-slate-500 pt-1">
               "{sim.verdict}"
             </p>
           </div>
         ))}
 
         {simulations.length === 0 && !isLoading && (
-          <div className="text-center py-8 text-xs text-muted font-mono">
+          <div className="text-center py-8 text-xs text-slate-400 font-mono">
             Type any skill or click a quick pick above to calculate trajectory branching.
           </div>
         )}

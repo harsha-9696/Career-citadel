@@ -7,13 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#0a0a0f',
-        surface: '#111118',
-        surface2: '#16161f',
-        accent: '#7fff6e',
-        accent2: '#6e8fff',
-        accent3: '#ff6e8f',
-        brutal: '#ff4444',
+        bg: '#f8fafc',
+        surface: '#ffffff',
+        surface2: '#f1f5f9',
+        border: 'rgba(226, 232, 240, 0.8)',
+        border2: 'rgba(203, 213, 225, 0.8)',
+        accent: '#10b981',
+        accent2: '#3b82f6',
+        accent3: '#8b5cf6',
+        brutal: '#ef4444',
+        text: '#0f172a',
+        muted: '#64748b',
       },
       fontFamily: {
         display: ['"Instrument Serif"', 'serif'],

@@ -8,7 +8,7 @@ import {
   CareerSimulation 
 } from '../types';
 
-const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
+const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || 'YOUR_GROQ_API_KEY';
 
 export function getApiKey(): string {
   return localStorage.getItem('citadel_groq_key') || DEFAULT_GROQ_KEY;
