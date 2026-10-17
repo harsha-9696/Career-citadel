@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Career Mirror — History</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .page {
+            position: relative;
+            z-index: 1;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .analysis-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .analysis-card:hover {
+            border-color: var(--border2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .ac-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .ac-role {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            font-style: italic;
+            line-height: 1.2;
+        }
+
+        .ac-score {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .ac-date {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 0.85rem;
+        }
+
+        .ac-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-bottom: 1rem;
+        }
+
+        .ac-skill {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--muted);
+        }
+
+        .ac-gaps {
+            margin-bottom: 1rem;
+        }
+
+        .ac-gaps-label {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .ac-bar {
+            height: 4px;
+            background: var(--surface2);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .ac-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: var(--accent);
+            transition: width 1s ease;
+        }
+
+        .ac-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .ac-summary {
+            font-size: 0.78rem;
+            color: var(--muted);
+            line-height: 1.5;
+            flex: 1;
+            padding-right: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        .empty-state h3 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-style: italic;
+            margin-bottom: 0.5rem;
+            color: var(--muted);
+        }
+
+        .empty-state p {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .stat-value {
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            color: var(--accent);
+            line-height: 1;
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-label {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="rippleCanvas"></canvas>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a href="index.html" class="topbar-logo">Career Mirror</a>
+        <div class="topbar-nav">
+            <a href="app.html" class="nav-link">✦ <span>Analyze</span></a>
+            <a href="resume.html" class="nav-link">◈ <span>Resume</span></a>
+            <a href="interview.html" class="nav-link">🎤 <span>Interview</span></a>
+            <a href="dashboard.html" class="nav-link active">⟡ <span>History</span></a>
+            <a href="profile.html" class="nav-link">◎ <span>Profile</span></a>
+            <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none;" />
+            <button class="btn btn-ghost" id="logoutBtn" onclick="handleLogout()"
+                style="padding:0.4rem 0.85rem;font-size:0.75rem;display:none;">Out</button>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="container">
+            <div style="margin-bottom:2rem;margin-top:1rem;">
+                <h1 class="section-title">Your Analyses</h1>
+                <p class="section-sub">Every career analysis you've run — tracked and saved.</p>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-row" id="statsRow" style="display:none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="statCount">0</div>
+                    <div class="stat-label">Analyses Run</div>
+                </div>
+                <div class="stat-card" style="animation-delay:0.1s;">
+                    <div class="stat-value" id="statAvg">0%</div>
+                    <div class="stat-label">Avg Match Score</div>
+                </div>
+                <div class="stat-card" style="animation-delay:0.2s;">
+                    <div class="stat-value" id="statBest">0%</div>
+                    <div class="stat-label">Best Score</div>
+                </div>
+            </div>
+
+            <!-- CONTENT -->
+            <div id="content">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    Loading your history…
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { onAuth, logout, getAnalyses } from './firebase.js';
+
+
+
+        // RIPPLE
+        const canvas = document.getElementById('rippleCanvas');
+        const ctx = canvas.getContext('2d');
+        let ripples = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('mousemove', e => {
+            if (Math.random() < 0.15) ripples.push({ x: e.clientX, y: e.clientY, r: 0, maxR: 60 + Math.random() * 40, alpha: 0.12, speed: 1 + Math.random() });
+        });
+        function animateRipples() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ripples = ripples.filter(r => r.r < r.maxR);
+            ripples.forEach(r => {
+                ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(127,255,110,${r.alpha * (1 - r.r / r.maxR)})`; ctx.lineWidth = 1.5; ctx.stroke();
+                r.r += r.speed;
+            });
+            requestAnimationFrame(animateRipples);
+        }
+        animateRipples();
+
+        // AUTH
+        onAuth(async user => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            document.getElementById('userAvatar').src = user.photoURL || '';
+            document.getElementById('userAvatar').style.display = 'block';
+            document.getElementById('logoutBtn').style.display = 'block';
+            loadAnalyses(user.uid);
+        });
+
+        window.handleLogout = async () => { await logout(); window.location.href = 'index.html'; };
+
+        async function loadAnalyses(uid) {
+            let analyses = [];
+            const content = document.getElementById('content');
+            try {
+                analyses = await getAnalyses(uid);
+            } catch (e) {
+                console.error('Firestore error:', e);
+                content.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠</div>
+        <h3>Could not load history.</h3>
+        <p style="color:var(--brutal);margin-bottom:0.5rem;">Firestore permission denied.</p>
+        <p>Go to <strong>Firebase Console → Firestore → Rules</strong> and set:<br><br>
+        <code style="font-size:0.75rem;background:var(--surface2);padding:0.5rem 0.75rem;border-radius:6px;display:inline-block;text-align:left;line-height:1.8;">
+        rules_version = '2';<br>
+        service cloud.firestore {<br>
+        &nbsp;&nbsp;match /databases/{database}/documents {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;match /users/{userId}/{document=**} {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if request.auth != null &amp;&amp; request.auth.uid == userId;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+        &nbsp;&nbsp;}<br>
+        }</code></p>
+        <a href="app.html" class="btn btn-accent" style="margin-top:1.5rem;">Start Analysis ✦</a>
+      </div>`;
+                return;
+            }
+
+            if (!analyses.length) {
+                content.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">◎</div>
+        <h3>No analyses yet.</h3>
+        <p>Run your first career analysis to see your history here.</p>
+        <a href="app.html" class="btn btn-accent">Start Analysis ✦</a>
+      </div>`;
+                return;
+            }
+
+            // Stats
+            const scores = analyses.map(a => a.matchScore || 0);
+            const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+            const best = Math.max(...scores);
+            document.getElementById('statCount').textContent = analyses.length;
+            document.getElementById('statAvg').textContent = avg + '%';
+            document.getElementById('statBest').textContent = best + '%';
+            document.getElementById('statsRow').style.display = 'grid';
+
+            // Cards
+            const grid = document.createElement('div');
+            grid.className = 'analysis-grid';
+
+            analyses.forEach((a, i) => {
+                const date = new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                const skills = (a.skills || []).slice(0, 4);
+                const gaps = (a.missingSkills?.critical || []).slice(0, 3);
+                const scoreColor = a.matchScore >= 70 ? 'var(--accent)' : a.matchScore >= 40 ? 'var(--accent2)' : 'var(--brutal)';
+
+                const card = document.createElement('div');
+                card.className = 'analysis-card';
+                card.style.animationDelay = (i * 0.07) + 's';
+                card.innerHTML = `
+      <div class="ac-top">
+        <div class="ac-role">${a.role || 'Unknown Role'}</div>
+        <div class="ac-score" style="color:${scoreColor};">${a.matchScore || 0}%</div>
+      </div>
+      <div class="ac-date">${date}</div>
+      <div class="ac-skills">
+        ${skills.map(s => `<span class="ac-skill">${s}</span>`).join('')}
+        ${a.skills?.length > 4 ? `<span class="ac-skill">+${a.skills.length - 4}</span>` : ''}
+      </div>
+      <div class="ac-bar" style="margin-bottom:0.85rem;">
+        <div class="ac-bar-fill" style="width:0%" data-pct="${a.matchScore || 0}"></div>
+      </div>
+      ${gaps.length ? `
+        <div class="ac-gaps">
+          <div class="ac-gaps-label">Critical Gaps</div>
+          <div class="pill-row">
+            ${gaps.map(g => `<span class="pill pill-crit">! ${g}</span>`).join('')}
+          </div>
+        </div>` : ''}
+      <div class="ac-footer">
+        <p class="ac-summary">${(a.summary || '').slice(0, 80)}${a.summary?.length > 80 ? '…' : ''}</p>
+        <a href="app.html" class="btn btn-ghost" style="padding:0.4rem 0.85rem;font-size:0.72rem;white-space:nowrap;">Re-run →</a>
+      </div>`;
+                grid.appendChild(card);
+            });
+
+            content.innerHTML = '';
+            content.appendChild(grid);
+
+            // Animate bars
+            setTimeout(() => {
+                document.querySelectorAll('.ac-bar-fill[data-pct]').forEach(b => {
+                    b.style.width = b.dataset.pct + '%';
+                });
+            }, 300);
+        }
+    </script>
+</body>
+
+</html>

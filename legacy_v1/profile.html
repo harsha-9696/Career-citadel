@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Career Mirror — Profile</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .page {
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        /* LEFT — USER CARD */
+        .user-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            animation: fadeUp 0.4s ease both;
+            position: sticky;
+            top: 72px;
+        }
+
+        .user-card-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border2);
+            margin: 0 auto 1rem;
+            display: block;
+        }
+
+        .user-card-avatar-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--accent-dim);
+            border: 2px solid rgba(127, 255, 110, 0.2);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        .user-card-name {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-style: italic;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-card-email {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .user-stat-row {
+            display: flex;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .user-stat {
+            flex: 1;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+
+        .user-stat:last-child {
+            border-right: none;
+        }
+
+        .user-stat-val {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-bottom: 0.2rem;
+        }
+
+        .user-stat-label {
+            font-family: var(--font-mono);
+            font-size: 0.55rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* RIGHT — EDIT FORM */
+        .edit-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            animation: fadeUp 0.4s 0.1s ease both;
+        }
+
+        .edit-card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .edit-card-title {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .edit-card-body {
+            padding: 1.5rem;
+        }
+
+        .save-status {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            letter-spacing: 0.06em;
+            color: var(--accent);
+            display: none;
+        }
+
+        .save-status.show {
+            display: block;
+        }
+
+        /* SKILLS DISPLAY */
+        .saved-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .saved-skill {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 0.3rem 0.7rem;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(127, 255, 110, 0.2);
+            border-radius: 6px;
+        }
+
+        /* DANGER ZONE */
+        .danger-card {
+            background: var(--surface);
+            border: 1px solid rgba(255, 68, 68, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            animation: fadeUp 0.4s 0.2s ease both;
+        }
+
+        .danger-title {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--brutal);
+            margin-bottom: 0.75rem;
+        }
+
+        .danger-text {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .user-card {
+                position: static;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="rippleCanvas"></canvas>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a href="index.html" class="topbar-logo">Career Mirror</a>
+        <div class="topbar-nav">
+            <a href="app.html" class="nav-link">✦ <span>Analyze</span></a>
+            <a href="resume.html" class="nav-link">◈ <span>Resume</span></a>
+            <a href="interview.html" class="nav-link">🎤 <span>Interview</span></a>
+            <a href="dashboard.html" class="nav-link">⟡ <span>History</span></a>
+            <a href="profile.html" class="nav-link active">◎ <span>Profile</span></a>
+            <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none;" />
+            <button class="btn btn-ghost" id="logoutBtn" onclick="handleLogout()"
+                style="padding:0.4rem 0.85rem;font-size:0.75rem;display:none;">Out</button>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="container" id="mainContent">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                Loading profile…
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { onAuth, logout, getProfile, saveProfile, getAnalyses } from './firebase.js';
+
+
+
+        // RIPPLE
+        const canvas = document.getElementById('rippleCanvas');
+        const ctx = canvas.getContext('2d');
+        let ripples = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('mousemove', e => {
+            if (Math.random() < 0.15) ripples.push({ x: e.clientX, y: e.clientY, r: 0, maxR: 60 + Math.random() * 40, alpha: 0.12, speed: 1 + Math.random() });
+        });
+        function animateRipples() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ripples = ripples.filter(r => r.r < r.maxR);
+            ripples.forEach(r => {
+                ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(127,255,110,${r.alpha * (1 - r.r / r.maxR)})`; ctx.lineWidth = 1.5; ctx.stroke();
+                r.r += r.speed;
+            });
+            requestAnimationFrame(animateRipples);
+        }
+        animateRipples();
+
+        let currentUser = null;
+        let skills = [];
+
+        // AUTH
+        onAuth(async user => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            currentUser = user;
+            document.getElementById('userAvatar').src = user.photoURL || '';
+            document.getElementById('userAvatar').style.display = 'block';
+            document.getElementById('logoutBtn').style.display = 'block';
+            await loadProfile(user);
+        });
+
+        window.handleLogout = async () => { await logout(); window.location.href = 'index.html'; };
+
+        async function loadProfile(user) {
+            let profile = null;
+            let analyses = [];
+            try {
+                [profile, analyses] = await Promise.all([
+                    getProfile(user.uid),
+                    getAnalyses(user.uid)
+                ]);
+            } catch (e) {
+                console.error('Firestore error:', e);
+                document.getElementById('mainContent').innerHTML = `
+      <div style="text-align:center;padding:5rem 2rem;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;opacity:0.5;">⚠</div>
+        <h3 style="font-family:var(--font-display);font-style:italic;font-size:1.4rem;margin-bottom:0.5rem;color:var(--muted);">Could not load profile.</h3>
+        <p style="color:var(--brutal);font-size:0.85rem;margin-bottom:1rem;">Firestore permission denied.</p>
+        <p style="font-size:0.82rem;color:var(--muted);max-width:480px;margin:0 auto 1.5rem;">
+          Go to <strong>Firebase Console → Firestore → Rules</strong> and publish these rules:
+        </p>
+        <code style="font-size:0.75rem;background:var(--surface);border:1px solid var(--border);padding:0.75rem 1rem;border-radius:8px;display:inline-block;text-align:left;line-height:1.9;">
+          rules_version = '2';<br>
+          service cloud.firestore {<br>
+          &nbsp;&nbsp;match /databases/{database}/documents {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;match /users/{userId}/{document=**} {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if request.auth != null &amp;&amp; request.auth.uid == userId;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+          &nbsp;&nbsp;}<br>
+          }
+        </code>
+      </div>`;
+                return;
+            }
+
+            skills = profile?.skills || [];
+            const scores = analyses.map(a => a.matchScore || 0);
+            const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+            const bestScore = scores.length ? Math.max(...scores) : 0;
+
+            document.getElementById('mainContent').innerHTML = `
+    <div style="margin-bottom:2rem;margin-top:1rem;">
+      <h1 class="section-title">Your Profile</h1>
+      <p class="section-sub">Manage your career information and preferences.</p>
+    </div>
+
+    <div class="profile-grid">
+
+      <!-- LEFT -->
+      <div>
+        <div class="user-card">
+          ${user.photoURL
+                    ? `<img class="user-card-avatar" src="${user.photoURL}" alt="${user.displayName}"/>`
+                    : `<div class="user-card-avatar-placeholder">${(user.displayName || '?')[0]}</div>`
+                }
+          <div class="user-card-name">${user.displayName || 'Anonymous'}</div>
+          <div class="user-card-email">${user.email}</div>
+          <div class="user-stat-row">
+            <div class="user-stat">
+              <div class="user-stat-val">${analyses.length}</div>
+              <div class="user-stat-label">Runs</div>
+            </div>
+            <div class="user-stat">
+              <div class="user-stat-val">${avgScore}%</div>
+              <div class="user-stat-label">Avg</div>
+            </div>
+            <div class="user-stat">
+              <div class="user-stat-val">${bestScore}%</div>
+              <div class="user-stat-label">Best</div>
+            </div>
+          </div>
+          <a href="app.html" class="btn btn-accent btn-full">New Analysis ✦</a>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <div class="edit-card">
+          <div class="edit-card-header">
+            <span class="edit-card-title">Career Information</span>
+            <span class="save-status" id="saveStatus">✓ Saved</span>
+          </div>
+          <div class="edit-card-body">
+
+            <div class="field">
+              <label>Current Skills</label>
+              <div class="tag-wrap" id="skillWrap" onclick="document.getElementById('skillInp').focus()">
+                <input type="text" class="tag-inp" id="skillInp" placeholder="Add a skill…" onkeydown="tagKey(event)"/>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Target Role</label>
+              <input type="text" id="targetRole" value="${profile?.role || ''}" placeholder="e.g. Full Stack Developer"/>
+            </div>
+
+            <div class="field">
+              <label>Education</label>
+              <input type="text" id="education" value="${profile?.education || ''}" placeholder="e.g. B.Tech CSE, 2026"/>
+            </div>
+
+            <div class="field">
+              <label>Experience</label>
+              <select id="experience">
+                <option value="fresher" ${profile?.experience === 'fresher' ? 'selected' : ''}>Fresher / Student</option>
+                <option value="<1" ${profile?.experience === '<1' ? 'selected' : ''}>Less than 1 year</option>
+                <option value="1-2" ${profile?.experience === '1-2' ? 'selected' : ''}>1–2 years</option>
+                <option value="3-5" ${profile?.experience === '3-5' ? 'selected' : ''}>3–5 years</option>
+                <option value="5+" ${profile?.experience === '5+' ? 'selected' : ''}>5+ years</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Bio <span style="opacity:0.5;">— optional</span></label>
+              <textarea id="bio" rows="3" placeholder="Tell your story…">${profile?.bio || ''}</textarea>
+            </div>
+
+            <button class="btn btn-accent" onclick="saveProfileData()">Save Changes ✦</button>
+
+          </div>
+        </div>
+
+        <!-- RECENT ANALYSES -->
+        ${analyses.length ? `
+        <div class="edit-card" style="margin-top:1.5rem;">
+          <div class="edit-card-header">
+            <span class="edit-card-title">Recent Analyses</span>
+            <a href="dashboard.html" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--accent);text-decoration:none;letter-spacing:0.06em;">View All →</a>
+          </div>
+          <div class="edit-card-body" style="padding:1rem 1.5rem;">
+            ${analyses.slice(0, 3).map(a => {
+                    const date = new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                    const scoreColor = a.matchScore >= 70 ? 'var(--accent)' : a.matchScore >= 40 ? 'var(--accent2)' : 'var(--brutal)';
+                    return `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+                <div>
+                  <p style="font-size:0.88rem;font-family:var(--font-display);font-style:italic;">${a.role}</p>
+                  <p style="font-family:var(--font-mono);font-size:0.6rem;color:var(--muted);letter-spacing:0.06em;margin-top:0.2rem;">${date}</p>
+                </div>
+                <span style="font-family:var(--font-mono);font-size:1rem;color:${scoreColor};">${a.matchScore}%</span>
+              </div>`;
+                }).join('')}
+          </div>
+        </div>` : ''}
+
+        <!-- DANGER ZONE -->
+        <div class="danger-card">
+          <div class="danger-title">⚠ Danger Zone</div>
+          <p class="danger-text">Sign out of Career Mirror on this device.</p>
+          <button class="btn btn-ghost" onclick="handleLogout()" style="border-color:rgba(255,68,68,0.3);color:var(--brutal);">Sign Out</button>
+        </div>
+
+      </div>
+    </div>`;
+
+            // Render saved skills
+            renderTags();
+        }
+
+        window.tagKey = e => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const val = e.target.value.replace(',', '').trim();
+                if (val && !skills.includes(val)) { skills.push(val); renderTags(); }
+                e.target.value = '';
+            }
+            if (e.key === 'Backspace' && e.target.value === '') { skills.pop(); renderTags(); }
+        };
+
+        window.removeSkill = val => { skills = skills.filter(s => s !== val); renderTags(); };
+
+        function renderTags() {
+            const wrap = document.getElementById('skillWrap');
+            if (!wrap) return;
+            const inp = document.getElementById('skillInp');
+            wrap.querySelectorAll('.stag').forEach(t => t.remove());
+            skills.forEach(val => {
+                const t = document.createElement('span');
+                t.className = 'stag';
+                t.innerHTML = `${val}<button onclick="removeSkill('${val}')">✕</button>`;
+                wrap.insertBefore(t, inp);
+            });
+        }
+
+        window.saveProfileData = async () => {
+            if (!currentUser) return;
+            const data = {
+                skills,
+                role: document.getElementById('targetRole').value.trim(),
+                education: document.getElementById('education').value.trim(),
+                experience: document.getElementById('experience').value,
+                bio: document.getElementById('bio').value.trim()
+            };
+            try {
+                await saveProfile(currentUser.uid, data);
+                const status = document.getElementById('saveStatus');
+                status.classList.add('show');
+                setTimeout(() => status.classList.remove('show'), 2500);
+            } catch (e) {
+                console.error('saveProfile failed:', e);
+                alert('Could not save — check Firestore rules.');
+            }
+        };
+    </script>
+</body>
+
+</html>

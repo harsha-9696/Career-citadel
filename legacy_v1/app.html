@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Career Mirror — App</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .topbar-logo {
+            text-decoration: none;
+        }
+
+        /* SETUP */
+        .setup-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 2rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .setup-card {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .setup-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-style: italic;
+            margin-bottom: 0.4rem;
+        }
+
+        .setup-sub {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        /* CHAT */
+        #chatPanel {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            padding-top: 56px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .ticker-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .ticker-inner {
+            display: flex;
+            animation: ticker 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes ticker {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.06em;
+            padding: 0 1.5rem;
+            color: var(--muted);
+            border-right: 1px solid var(--border);
+        }
+
+        .ticker-item .up {
+            color: var(--accent);
+        }
+
+        .ticker-item .down {
+            color: var(--brutal);
+        }
+
+        .ticker-item .neu {
+            color: var(--accent2);
+        }
+
+        .chat-scroll {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-area {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* MESSAGES */
+        .msg {
+            margin-bottom: 1.5rem;
+            animation: fadeUp 0.35s ease both;
+        }
+
+        .msg-ai {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .msg-user {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            flex-shrink: 0;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .avatar-ai {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(127, 255, 110, 0.2);
+            font-family: var(--font-mono);
+        }
+
+        .avatar-user {
+            background: var(--accent2-dim);
+            color: var(--accent2);
+            border: 1px solid rgba(110, 143, 255, 0.2);
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+        }
+
+        .bubble {
+            max-width: 75%;
+            padding: 0.85rem 1.1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .bubble-ai {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px 12px 12px 12px;
+        }
+
+        .bubble-ai.brutal {
+            border-color: rgba(255, 68, 68, 0.25);
+            background: rgba(255, 68, 68, 0.04);
+        }
+
+        .bubble-user {
+            background: var(--accent2-dim);
+            border: 1px solid rgba(110, 143, 255, 0.2);
+            color: var(--text);
+            border-radius: 12px 4px 12px 12px;
+        }
+
+        /* RESULT CARDS */
+        .rc {
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+
+        .rc-head {
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .rc-label {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            flex: 1;
+        }
+
+        .rc-score {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        .rc-body {
+            padding: 1.25rem;
+        }
+
+        .skill-section {
+            margin-bottom: 0.85rem;
+        }
+
+        .skill-section-label {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+
+        /* ROADMAP */
+        .rm-step {
+            display: flex;
+            gap: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .rm-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(127, 255, 110, 0.2);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .rm-phase {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .rm-focus {
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .rm-actions {
+            font-size: 0.8rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* WHAT IF */
+        .whatif-bar {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .whatif-label {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent2);
+            white-space: nowrap;
+        }
+
+        .whatif-inp {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            color: var(--text);
+            min-width: 0;
+        }
+
+        .whatif-btn {
+            background: var(--accent2-dim);
+            color: var(--accent2);
+            border: 1px solid rgba(110, 143, 255, 0.25);
+            border-radius: 6px;
+            padding: 0.35rem 0.85rem;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .whatif-btn:hover {
+            background: rgba(110, 143, 255, 0.2);
+        }
+
+        /* INPUT */
+        .input-wrap {
+            border-top: 1px solid var(--border);
+            background: rgba(10, 10, 15, 0.92);
+            backdrop-filter: blur(20px);
+            padding: 0.85rem 2rem;
+            flex-shrink: 0;
+        }
+
+        .input-inner {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .chat-inp {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            color: var(--text);
+            outline: none;
+            resize: none;
+            min-height: 46px;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+        }
+
+        .chat-inp:focus {
+            border-color: rgba(127, 255, 110, 0.35);
+        }
+
+        .send-btn {
+            width: 46px;
+            height: 46px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 1rem;
+            color: var(--bg);
+            font-weight: 700;
+        }
+
+        .send-btn:hover {
+            box-shadow: 0 4px 16px rgba(127, 255, 110, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.35;
+            transform: none;
+        }
+
+        .input-hint {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            margin-top: 0.4rem;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="rippleCanvas"></canvas>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a href="index.html" class="topbar-logo">Career Mirror</a>
+        <div class="topbar-nav">
+            <a href="app.html" class="nav-link active">✦ <span>Analyze</span></a>
+            <a href="resume.html" class="nav-link">◈ <span>Resume</span></a>
+            <a href="interview.html" class="nav-link">🎤 <span>Interview</span></a>
+            <a href="dashboard.html" class="nav-link">⟡ <span>History</span></a>
+            <a href="profile.html" class="nav-link">◎ <span>Profile</span></a>
+            <button class="brutal-toggle" id="brutalBtn" onclick="toggleBrutal()">
+                <span class="toggle-dot"></span>Brutal
+            </button>
+            <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none;" />
+            <button class="btn btn-ghost" id="logoutBtn" onclick="handleLogout()"
+                style="padding:0.4rem 0.85rem;font-size:0.75rem;display:none;">Out</button>
+        </div>
+    </div>
+
+    <!-- SETUP -->
+    <div class="setup-wrap" id="setupWrap">
+        <div class="setup-card fade-up">
+            <p class="setup-title">Let's build your profile.</p>
+            <p class="setup-sub">Quick setup — then your AI mentor takes over.</p>
+
+            <div class="field">
+                <label>Your Current Skills <span style="opacity:0.5;">(Enter or comma)</span></label>
+                <div class="tag-wrap" id="skillWrap" onclick="document.getElementById('skillInp').focus()">
+                    <input type="text" class="tag-inp" id="skillInp" placeholder="e.g. Python, React, SQL…"
+                        onkeydown="tagKey(event)" />
+                </div>
+                <p class="err" id="errSkill">Add at least one skill.</p>
+            </div>
+
+            <div class="field">
+                <label>Target Job Role</label>
+                <input type="text" id="targetRole" placeholder="e.g. Full Stack Developer, Data Scientist…" />
+                <p class="err" id="errRole">Enter a target role.</p>
+            </div>
+
+            <div class="field">
+                <label>Education</label>
+                <input type="text" id="education" placeholder="e.g. B.Tech CSE, 2026" />
+            </div>
+
+            <div class="field">
+                <label>Experience</label>
+                <select id="experience">
+                    <option value="fresher">Fresher / Student</option>
+                    <option value="<1">Less than 1 year</option>
+                    <option value="1-2">1–2 years</option>
+                    <option value="3-5">3–5 years</option>
+                    <option value="5+">5+ years</option>
+                </select>
+            </div>
+
+            <button class="btn btn-accent btn-full" onclick="startChat()">Start My Analysis ✦</button>
+        </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="chatPanel">
+        <div class="ticker-bar">
+            <div class="ticker-inner" id="ticker"></div>
+        </div>
+        <div class="chat-scroll" id="chatScroll">
+            <div class="chat-area" id="chatArea"></div>
+        </div>
+        <div class="input-wrap">
+            <div class="input-inner">
+                <div class="whatif-bar" id="whatifBar" style="display:none;">
+                    <span class="whatif-label">What if I learn →</span>
+                    <input type="text" class="whatif-inp" id="whatifInp" placeholder="e.g. Docker, AWS, System Design…"
+                        onkeydown="if(event.key==='Enter')simulateWhatIf()" />
+                    <button class="whatif-btn" onclick="simulateWhatIf()">Simulate ⟡</button>
+                </div>
+                <div class="input-row">
+                    <textarea class="chat-inp" id="chatInp" placeholder="Ask anything — gaps, roadmap, advice…"
+                        onkeydown="chatKey(event)" rows="1" oninput="autoResize(this)"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMsg()">→</button>
+                </div>
+                <p class="input-hint">ENTER to send · SHIFT+ENTER for new line</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { onAuth, logout, saveAnalysis, getProfile, saveProfile } from './firebase.js';
+
+        // ── STATE ──
+        const S = { user: null, skills: [], brutal: false, result: null, history: [] };
+
+        // ── RIPPLE ──
+        const canvas = document.getElementById('rippleCanvas');
+        const ctx = canvas.getContext('2d');
+        let ripples = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('mousemove', e => {
+            if (Math.random() < 0.2) ripples.push({ x: e.clientX, y: e.clientY, r: 0, maxR: 70 + Math.random() * 50, alpha: 0.15, speed: 1.2 + Math.random() });
+        });
+        document.addEventListener('click', e => {
+            for (let i = 0; i < 3; i++) ripples.push({ x: e.clientX, y: e.clientY, r: 0, maxR: 90 + Math.random() * 70, alpha: 0.25, speed: 2 + Math.random() * 1.5 });
+        });
+        function animateRipples() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ripples = ripples.filter(r => r.r < r.maxR);
+            ripples.forEach(r => {
+                ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(127,255,110,${r.alpha * (1 - r.r / r.maxR)})`; ctx.lineWidth = 1.5; ctx.stroke();
+                r.r += r.speed;
+            });
+            requestAnimationFrame(animateRipples);
+        }
+        animateRipples();
+
+        // ── AUTH ──
+        onAuth(async user => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            S.user = user;
+            document.getElementById('userAvatar').src = user.photoURL || '';
+            document.getElementById('userAvatar').style.display = 'block';
+            document.getElementById('logoutBtn').style.display = 'block';
+
+            // load saved profile
+            const profile = await getProfile(user.uid);
+            if (profile?.skills?.length) {
+                S.skills = profile.skills;
+                renderTags();
+                document.getElementById('targetRole').value = profile.role || '';
+                document.getElementById('education').value = profile.education || '';
+                document.getElementById('experience').value = profile.experience || 'fresher';
+            }
+        });
+
+        window.handleLogout = async () => { await logout(); window.location.href = 'index.html'; };
+
+        // ── TAGS ──
+        window.tagKey = e => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const val = e.target.value.replace(',', '').trim();
+                if (val && !S.skills.includes(val)) { S.skills.push(val); renderTags(); }
+                e.target.value = '';
+            }
+            if (e.key === 'Backspace' && e.target.value === '') { S.skills.pop(); renderTags(); }
+        };
+        window.removeSkill = val => { S.skills = S.skills.filter(s => s !== val); renderTags(); };
+        function renderTags() {
+            const wrap = document.getElementById('skillWrap');
+            const inp = document.getElementById('skillInp');
+            wrap.querySelectorAll('.stag').forEach(t => t.remove());
+            S.skills.forEach(val => {
+                const t = document.createElement('span');
+                t.className = 'stag';
+                t.innerHTML = `${val}<button onclick="removeSkill('${val}')">✕</button>`;
+                wrap.insertBefore(t, inp);
+            });
+        }
+
+        // ── BRUTAL ──
+        window.toggleBrutal = () => {
+            S.brutal = !S.brutal;
+            document.getElementById('brutalBtn').classList.toggle('active', S.brutal);
+            if (S.brutal) addMsg('ai', '💀 **Brutal Honesty Mode ON.** No sugarcoating. Raw truth only.');
+        };
+
+        // ── TICKER ──
+        function buildTicker() {
+            const skills = [
+                { n: 'LLM Engineering', t: 'up', v: '+34%' }, { n: 'React', t: 'up', v: '+12%' }, { n: 'System Design', t: 'up', v: '+22%' },
+                { n: 'Python', t: 'up', v: '+18%' }, { n: 'AWS', t: 'neu', v: '→ stable' }, { n: 'Docker', t: 'up', v: '+9%' },
+                { n: 'Java', t: 'down', v: '-4%' }, { n: 'Manual Testing', t: 'down', v: '-17%' }, { n: 'Kubernetes', t: 'up', v: '+15%' },
+                { n: 'TypeScript', t: 'up', v: '+19%' }, { n: 'Rust', t: 'up', v: '+28%' }, { n: 'RAG Systems', t: 'up', v: '+41%' },
+                { n: 'PHP', t: 'down', v: '-11%' }, { n: 'GraphQL', t: 'neu', v: '→ stable' }, { n: 'Angular', t: 'down', v: '-8%' },
+            ];
+            const all = [...skills, ...skills];
+            document.getElementById('ticker').innerHTML = all.map(s =>
+                `<span class="ticker-item">${s.n} <span class="${s.t}">${s.v}</span></span>`
+            ).join('');
+        }
+
+        // ── START CHAT ──
+        window.startChat = async () => {
+            const role = document.getElementById('targetRole').value.trim();
+            let ok = true;
+            if (!S.skills.length) { document.getElementById('errSkill').classList.add('show'); ok = false; }
+            else document.getElementById('errSkill').classList.remove('show');
+            if (!role) { document.getElementById('errRole').classList.add('show'); ok = false; }
+            else document.getElementById('errRole').classList.remove('show');
+            if (!ok) return;
+
+            const profile = {
+                skills: S.skills, role,
+                education: document.getElementById('education').value.trim(),
+                experience: document.getElementById('experience').value
+            };
+            S.profile = profile;
+            if (S.user) { try { await saveProfile(S.user.uid, profile); } catch(e) { console.warn('saveProfile failed:', e); } }
+
+            document.getElementById('setupWrap').style.display = 'none';
+            document.getElementById('chatPanel').style.display = 'flex';
+            buildTicker();
+
+            addMsg('ai', `Hey ${S.user?.displayName?.split(' ')[0] || 'there'}! 👋\n\nI've got your profile — **${S.skills.slice(0, 3).join(', ')}${S.skills.length > 3 ? ` +${S.skills.length - 3} more` : ''}** — targeting **${role}**.\n\nRunning your full analysis now…`);
+            setTimeout(runAnalysis, 1200);
+        };
+
+        // ── GROQ API ──
+        async function callGroq(prompt, freeform = false) {
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer YOUR_GROQ_API_KEY`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: freeform ? 0.85 : 0.3,
+                        max_tokens: 1500
+                    })
+                });
+                if (!res.ok) { console.error(await res.json()); return null; }
+                const data = await res.json();
+                return data.choices?.[0]?.message?.content || null;
+            } catch (e) { console.error(e); return null; }
+        }
+
+        // ── FULL ANALYSIS ──
+        async function runAnalysis() {
+            showTyping();
+            const p = S.profile;
+            const brutalCtx = S.brutal
+                ? 'Be brutally, painfully honest. No sugarcoating. Call out weaknesses directly. Tough love.'
+                : 'Be encouraging but realistic and truthful.';
+
+            const prompt = `You are an elite career intelligence AI mentor. ${brutalCtx}
+
+PROFILE:
+- Skills: ${p.skills.join(', ')}
+- Target Role: ${p.role}
+- Education: ${p.education || 'Not provided'}
+- Experience: ${p.experience}
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "matchScore": <0-100>,
+  "openingLine": "<1 punchy sentence on their situation>",
+  "summary": "<2 sentences on their standing>",
+  "strengths": ["<s1>","<s2>","<s3>"],
+  "missingSkills": {
+    "critical": ["<s1>","<s2>","<s3>"],
+    "recommended": ["<s1>","<s2>"],
+    "niceToHave": ["<s1>","<s2>"]
+  },
+  "jobRoles": [
+    {"title":"<role>","fit":<0-100>,"reason":"<1 line>"},
+    {"title":"<role>","fit":<0-100>,"reason":"<1 line>"},
+    {"title":"<role>","fit":<0-100>,"reason":"<1 line>"}
+  ],
+  "roadmap": [
+    {"phase":"Month 1–2","focus":"<focus>","actions":["<a1>","<a2>","<a3>"]},
+    {"phase":"Month 3–4","focus":"<focus>","actions":["<a1>","<a2>","<a3>"]},
+    {"phase":"Month 5–6","focus":"<focus>","actions":["<a1>","<a2>","<a3>"]}
+  ],
+  "quickWins": ["<qw1>","<qw2>","<qw3>"],
+  "mentorNote": "<1 short personal message to the candidate>"
+}`;
+
+            const raw = await callGroq(prompt);
+            removeTyping();
+            if (!raw) { addMsg('ai', '⚠ API error. Check your connection and try again.'); return; }
+
+            try {
+                const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) { addMsg('ai', '⚠ Parse error. Try again.'); return; }
+                
+                // Content cleaning for robust parsing
+                const cleaned = jsonMatch[0]
+                    .replace(/:\s*\+([0-9])/g, ': $1')
+                    .replace(/,\s*([\]}])/g, '$1');
+                    
+                const d = JSON.parse(cleaned);
+                S.result = d;
+
+                // Save to Firebase
+                if (S.user) {
+                    try {
+                        await saveAnalysis(S.user.uid, {
+                            role: S.profile.role,
+                            skills: S.profile.skills,
+                            matchScore: d.matchScore,
+                            summary: d.summary,
+                            missingSkills: d.missingSkills,
+                            roadmap: d.roadmap
+                        });
+                    } catch(e) { console.warn('saveAnalysis failed:', e); }
+                }
+
+                renderAnalysis(d);
+                document.getElementById('whatifBar').style.display = 'flex';
+            } catch (e) {
+                addMsg('ai', '⚠ Parse error. Try again.');
+            }
+        }
+
+        function renderAnalysis(d) {
+            addMsg('ai', `${d.openingLine}\n\n${d.summary}`);
+
+            setTimeout(() => {
+                addMsg('ai', `
+    <div class="rc">
+      <div class="rc-head">
+        <span class="rc-label">Match Score — ${S.profile.role}</span>
+        <span class="rc-score">${d.matchScore}%</span>
+      </div>
+      <div class="rc-body">
+        <div class="bar-row" style="margin-bottom:1rem;">
+          <span class="bar-label">Role Fit</span>
+          <div class="bar-track"><div class="bar-fill" style="width:0%" data-pct="${d.matchScore}"></div></div>
+          <span class="bar-pct">${d.matchScore}%</span>
+        </div>
+        <div class="skill-section">
+          <div class="skill-section-label">Strengths</div>
+          <div class="pill-row">${d.strengths.map(s => `<span class="pill pill-good">✓ ${s}</span>`).join('')}</div>
+        </div>
+        <div class="skill-section" style="margin-top:0.85rem;">
+          <div class="skill-section-label">Critical Gaps</div>
+          <div class="pill-row">${d.missingSkills.critical.map(s => `<span class="pill pill-crit">! ${s}</span>`).join('')}</div>
+        </div>
+        <div class="skill-section" style="margin-top:0.85rem;">
+          <div class="skill-section-label">Recommended</div>
+          <div class="pill-row">${d.missingSkills.recommended.map(s => `<span class="pill pill-rec">${s}</span>`).join('')}</div>
+        </div>
+      </div>
+    </div>`, true);
+                setTimeout(animateBars, 300);
+            }, 700);
+
+            setTimeout(() => {
+                addMsg('ai', `
+    <div class="rc">
+      <div class="rc-head"><span class="rc-label">Best-Fit Roles</span></div>
+      <div class="rc-body">
+        ${d.jobRoles.map(j => `
+          <div class="bar-row">
+            <span class="bar-label">${j.title}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--accent2);" data-pct="${j.fit}"></div></div>
+            <span class="bar-pct" style="color:var(--accent2);">${j.fit}%</span>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem;padding-left:140px;">${j.reason}</p>
+        `).join('')}
+      </div>
+    </div>`, true);
+                setTimeout(animateBars, 300);
+            }, 1500);
+
+            setTimeout(() => {
+                addMsg('ai', `
+    <div class="rc">
+      <div class="rc-head"><span class="rc-label">Learning Roadmap</span></div>
+      <div class="rc-body">
+        ${d.roadmap.map((r, i) => `
+          <div class="rm-step">
+            <div class="rm-num">${i + 1}</div>
+            <div>
+              <div class="rm-phase">${r.phase}</div>
+              <div class="rm-focus">${r.focus}</div>
+              <div class="rm-actions">${r.actions.map(a => `→ ${a}`).join('<br>')}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`, true);
+            }, 2400);
+
+            setTimeout(() => {
+                addMsg('ai', `**Quick wins — start today:**\n${d.quickWins.map((w, i) => `${i + 1}. ${w}`).join('\n')}\n\n*${d.mentorNote}*\n\n💡 Use the **What If Simulator** above — type a skill to see how it changes your score.`);
+            }, 3400);
+        }
+
+        // ── WHAT IF ──
+        window.simulateWhatIf = async () => {
+            const skill = document.getElementById('whatifInp').value.trim();
+            if (!skill) return;
+            document.getElementById('whatifInp').value = '';
+            addMsg('user', `What if I learn ${skill}?`);
+            showTyping();
+
+            const d = S.result;
+            const prompt = `Career AI. Candidate targets "${S.profile.role}", current match: ${d.matchScore}%. Skills: ${S.profile.skills.join(', ')}.
+If they learn "${skill}", respond ONLY in JSON (numbers without + sign):
+{
+  "newScore": number,
+  "scoreDelta": number (positive or negative, no + sign),
+  "impact": "1 sentence",
+  "newOpportunities": ["..."],
+  "verdict": "punchy"
+}`;
+
+            const raw = await callGroq(prompt);
+            removeTyping();
+            if (!raw) { addMsg('ai', '⚠ Simulation failed.'); return; }
+
+            try {
+                const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) { addMsg('ai', '⚠ Could not parse simulation. Try again.'); return; }
+                
+                // Remove leading + signs and trailing commas which break JSON.parse
+                const cleaned = jsonMatch[0]
+                    .replace(/:\s*\+([0-9])/g, ': $1')
+                    .replace(/,\s*([\]}])/g, '$1');
+                const sim = JSON.parse(cleaned);
+                const sign = sim.scoreDelta >= 0 ? '+' : '';
+                const color = sim.scoreDelta >= 0 ? 'var(--accent)' : 'var(--brutal)';
+                addMsg('ai', `
+    <div class="rc">
+      <div class="rc-head">
+        <span class="rc-label">Simulation: Learn ${skill}</span>
+        <span class="rc-score" style="color:${color};">${sign}${sim.scoreDelta}% → ${sim.newScore}%</span>
+      </div>
+      <div class="rc-body">
+        <p style="font-size:0.88rem;margin-bottom:0.75rem;">${sim.impact}</p>
+        <div class="skill-section-label" style="margin-bottom:0.4rem;">New Opportunities</div>
+        <div class="pill-row">${sim.newOpportunities.map(o => `<span class="pill pill-rec">⟡ ${o}</span>`).join('')}</div>
+        <p style="margin-top:0.85rem;font-size:0.85rem;font-style:italic;color:var(--muted);">${sim.verdict}</p>
+      </div>
+    </div>`, true);
+            } catch (e) { addMsg('ai', '⚠ Parse error.'); }
+        };
+
+        // ── CHAT ──
+        window.sendMsg = async () => {
+            const inp = document.getElementById('chatInp');
+            const text = inp.value.trim();
+            if (!text) return;
+            inp.value = ''; inp.style.height = 'auto';
+            addMsg('user', text);
+            showTyping();
+
+            const d = S.result;
+            const ctx = `You are Career Mirror, elite AI career mentor.
+Candidate: skills [${S.profile?.skills?.join(', ')}], targeting "${S.profile?.role}".
+Match score: ${d?.matchScore || '?'}%, Critical gaps: ${d?.missingSkills?.critical?.join(', ') || 'pending'}.
+${S.brutal ? 'BRUTAL MODE: Be direct, no sugarcoating, tough love.' : 'Be warm, precise, specific.'}
+Answer concisely. No generic advice.
+
+User asks: ${text}`;
+
+            const reply = await callGroq(ctx, true);
+            removeTyping();
+            addMsg('ai', reply || '⚠ No response. Try again.');
+        };
+
+        window.chatKey = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } };
+        window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
+
+        // ── MESSAGE HELPERS ──
+        function addMsg(role, content, isHTML = false) {
+            const area = document.getElementById('chatArea');
+            const div = document.createElement('div');
+            div.className = 'msg';
+            const brutalClass = (role === 'ai' && S.brutal) ? ' brutal' : '';
+            if (role === 'ai') {
+                div.innerHTML = `<div class="msg-ai"><div class="avatar avatar-ai">CM</div><div class="bubble bubble-ai${brutalClass}">${isHTML ? content : fmt(content)}</div></div>`;
+            } else {
+                div.innerHTML = `<div class="msg-user"><div class="avatar avatar-user">You</div><div class="bubble bubble-user">${fmt(content)}</div></div>`;
+            }
+            area.appendChild(div);
+            scrollBottom();
+        }
+
+        function fmt(t) {
+            return t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+        }
+
+        let typingEl = null;
+        function showTyping() {
+            const area = document.getElementById('chatArea');
+            typingEl = document.createElement('div');
+            typingEl.className = 'msg'; typingEl.id = 'typingEl';
+            typingEl.innerHTML = `<div class="msg-ai"><div class="avatar avatar-ai">CM</div><div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+            area.appendChild(typingEl); scrollBottom();
+            document.getElementById('sendBtn').disabled = true;
+        }
+        function removeTyping() {
+            document.getElementById('typingEl')?.remove();
+            document.getElementById('sendBtn').disabled = false;
+        }
+        function scrollBottom() {
+            const s = document.getElementById('chatScroll');
+            setTimeout(() => { s.scrollTop = s.scrollHeight; }, 100);
+        }
+        function animateBars() {
+            document.querySelectorAll('.bar-fill[data-pct]:not([data-animated])').forEach(b => {
+                b.style.width = b.dataset.pct + '%'; b.dataset.animated = '1';
+            });
+        }
+    </script>
+</body>
+
+</html>

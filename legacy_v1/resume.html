@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Career Mirror — Resume Analyzer</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .page {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* UPLOAD ZONE */
+        .upload-zone {
+            border: 2px dashed var(--border2);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.2s;
+            background: var(--surface);
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .upload-zone h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-style: italic;
+            margin-bottom: 0.4rem;
+        }
+
+        .upload-zone p {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .upload-zone strong {
+            color: var(--accent);
+        }
+
+        /* FILE CHOSEN */
+        .file-chosen {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--accent-dim);
+            border: 1.5px solid rgba(127, 255, 110, 0.3);
+            border-radius: 10px;
+            padding: 0.85rem 1.1rem;
+            font-size: 0.88rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+        }
+
+        .file-chosen.show {
+            display: flex;
+        }
+
+        /* RESULTS */
+        .results-wrap {
+            display: none;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .results-wrap.show {
+            display: block;
+        }
+
+        /* ATS SCORE HERO */
+        .ats-hero {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ats-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(127, 255, 110, 0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .ats-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .ats-score-ring {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 1.25rem;
+            position: relative;
+        }
+
+        .ats-score-ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .ats-score-ring .track {
+            fill: none;
+            stroke: var(--surface2);
+            stroke-width: 8;
+        }
+
+        .ats-score-ring .fill {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 339.3;
+            stroke-dashoffset: 339.3;
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ats-score-number {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ats-score-val {
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .ats-score-sub {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-top: 0.2rem;
+        }
+
+        .ats-verdict {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-style: italic;
+            margin-bottom: 0.4rem;
+        }
+
+        .ats-summary {
+            font-size: 0.85rem;
+            color: var(--muted);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* RESULT GRID */
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .rc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .rc-head {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rc-label {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .rc-body {
+            padding: 1.25rem;
+        }
+
+        /* IMPROVEMENTS */
+        .improvement-item {
+            display: flex;
+            gap: 0.85rem;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid var(--border);
+            animation: fadeUp 0.3s ease both;
+        }
+
+        .improvement-item:last-child {
+            border-bottom: none;
+        }
+
+        .imp-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .imp-high {
+            background: rgba(255, 68, 68, 0.12);
+        }
+
+        .imp-med {
+            background: var(--accent2-dim);
+        }
+
+        .imp-low {
+            background: var(--accent-dim);
+        }
+
+        .imp-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .imp-desc {
+            font-size: 0.8rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .imp-priority {
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-left: auto;
+            flex-shrink: 0;
+            align-self: flex-start;
+            margin-top: 2px;
+        }
+
+        .pri-high {
+            background: rgba(255, 68, 68, 0.12);
+            color: var(--brutal);
+        }
+
+        .pri-med {
+            background: var(--accent2-dim);
+            color: var(--accent2);
+        }
+
+        .pri-low {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        /* LOADING */
+        .loading-overlay {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-overlay.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 1.25rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-msg {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .loading-msg strong {
+            color: var(--text);
+            display: block;
+            font-size: 0.88rem;
+            margin-bottom: 0.3rem;
+        }
+
+        /* FULL WIDTH CARD */
+        .rc-full {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="rippleCanvas"></canvas>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <a href="index.html" class="topbar-logo">Career Mirror</a>
+        <div class="topbar-nav">
+            <a href="app.html" class="nav-link">✦ <span>Analyze</span></a>
+            <a href="resume.html" class="nav-link active">◈ <span>Resume</span></a>
+            <a href="interview.html" class="nav-link">🎤 <span>Interview</span></a>
+            <a href="dashboard.html" class="nav-link">⟡ <span>History</span></a>
+            <a href="profile.html" class="nav-link">◎ <span>Profile</span></a>
+            <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none;" />
+            <button class="btn btn-ghost" id="logoutBtn" onclick="handleLogout()"
+                style="padding:0.4rem 0.85rem;font-size:0.75rem;display:none;">Out</button>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="container-sm">
+
+            <div style="margin-bottom:2rem;margin-top:1rem;">
+                <h1 class="section-title">Resume Analyzer</h1>
+                <p class="section-sub">Upload your resume — get ATS score, skill extraction, and brutal improvement
+                    tips.</p>
+            </div>
+
+            <!-- UPLOAD -->
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="resumeFile" accept=".pdf,.txt,.doc,.docx" onchange="handleFile(this)" />
+                <span class="upload-icon">◈</span>
+                <h3>Drop your resume here</h3>
+                <p><strong>Click to upload</strong> or drag & drop</p>
+                <p style="margin-top:0.4rem;">PDF, TXT, DOC — max 5MB</p>
+            </div>
+
+            <!-- FILE CHOSEN -->
+            <div class="file-chosen" id="fileChosen">
+                <span>📎</span>
+                <span id="fileName">—</span>
+                <button onclick="clearFile()"
+                    style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--accent);font-size:1rem;">✕</button>
+            </div>
+
+            <!-- TARGET ROLE -->
+            <div class="field">
+                <label>Target Job Role</label>
+                <input type="text" id="targetRole" placeholder="e.g. Full Stack Developer, Data Scientist…" />
+                <p class="err" id="errRole">Please enter a target role.</p>
+            </div>
+
+            <div class="field">
+                <label>Job Description <span style="opacity:0.5;">— optional but improves ATS accuracy</span></label>
+                <textarea id="jobDesc" rows="4"
+                    placeholder="Paste the job description here for more accurate ATS scoring…"></textarea>
+            </div>
+
+            <button class="btn btn-accent btn-full" id="analyzeBtn" onclick="analyzeResume()"
+                style="margin-bottom:2rem;">
+                Analyze Resume ◈
+            </button>
+
+            <!-- LOADING -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div class="loading-msg">
+                    <strong id="loadingMsg">Extracting skills from your resume…</strong>
+                    AI is reading every line carefully
+                </div>
+            </div>
+
+            <!-- RESULTS -->
+            <div class="results-wrap" id="resultsWrap">
+
+                <!-- ATS SCORE -->
+                <div class="ats-hero">
+                    <div class="ats-label">ATS Compatibility Score</div>
+                    <div class="ats-score-ring">
+                        <svg viewBox="0 0 120 120">
+                            <circle class="track" cx="60" cy="60" r="54" />
+                            <circle class="fill" id="atsFill" cx="60" cy="60" r="54" />
+                        </svg>
+                        <div class="ats-score-number">
+                            <span class="ats-score-val" id="atsScoreVal">0%</span>
+                            <span class="ats-score-sub">ATS Score</span>
+                        </div>
+                    </div>
+                    <div class="ats-verdict" id="atsVerdict">—</div>
+                    <p class="ats-summary" id="atsSummary">—</p>
+                </div>
+
+                <!-- GRID ROW 1 -->
+                <div class="result-grid">
+
+                    <!-- EXTRACTED SKILLS -->
+                    <div class="rc">
+                        <div class="rc-head"><span class="rc-label">✦ Extracted Skills</span></div>
+                        <div class="rc-body">
+                            <div style="margin-bottom:0.85rem;">
+                                <div
+                                    style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;">
+                                    Found in Resume</div>
+                                <div class="pill-row" id="extractedSkills"></div>
+                            </div>
+                            <div>
+                                <div
+                                    style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;">
+                                    Missing for Role</div>
+                                <div class="pill-row" id="missingSkills"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROLE MATCH -->
+                    <div class="rc">
+                        <div class="rc-head"><span class="rc-label">⟡ Role Match Breakdown</span></div>
+                        <div class="rc-body" id="roleMatch"></div>
+                    </div>
+
+                </div>
+
+                <!-- IMPROVEMENTS -->
+                <div class="rc-full">
+                    <div class="rc-head"><span class="rc-label">⚡ Resume Improvement Suggestions</span></div>
+                    <div class="rc-body" id="improvements"></div>
+                </div>
+
+                <!-- REWRITE TIPS -->
+                <div class="rc-full" style="margin-bottom:2rem;">
+                    <div class="rc-head"><span class="rc-label">◈ Keyword Optimization</span></div>
+                    <div class="rc-body" id="keywords"></div>
+                </div>
+
+                <!-- RE-ANALYZE -->
+                <div style="display:flex;gap:0.75rem;margin-bottom:3rem;">
+                    <button class="btn btn-accent" onclick="analyzeResume()">Re-analyze ◈</button>
+                    <button class="btn btn-ghost" onclick="clearFile()">Upload New Resume</button>
+                    <a href="app.html" class="btn btn-outline">Full Career Analysis ✦</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { onAuth, logout } from './firebase.js';
+
+
+
+        // RIPPLE
+        const canvas = document.getElementById('rippleCanvas');
+        const ctx = canvas.getContext('2d');
+        let ripples = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('mousemove', e => {
+            if (Math.random() < 0.15) ripples.push({ x: e.clientX, y: e.clientY, r: 0, maxR: 60 + Math.random() * 40, alpha: 0.12, speed: 1 + Math.random() });
+        });
+        function animateRipples() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ripples = ripples.filter(r => r.r < r.maxR);
+            ripples.forEach(r => {
+                ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(127,255,110,${r.alpha * (1 - r.r / r.maxR)})`; ctx.lineWidth = 1.5; ctx.stroke();
+                r.r += r.speed;
+            });
+            requestAnimationFrame(animateRipples);
+        }
+        animateRipples();
+
+        // AUTH
+        onAuth(user => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            document.getElementById('userAvatar').src = user.photoURL || '';
+            document.getElementById('userAvatar').style.display = 'block';
+            document.getElementById('logoutBtn').style.display = 'block';
+        });
+        window.handleLogout = async () => { const { logout } = await import('./firebase.js'); await logout(); window.location.href = 'index.html'; };
+
+        // DRAG & DROP
+        const zone = document.getElementById('uploadZone');
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', e => {
+            e.preventDefault(); zone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) { document.getElementById('resumeFile').files = e.dataTransfer.files; handleFile(document.getElementById('resumeFile')); }
+        });
+
+        let resumeText = '';
+
+        window.handleFile = input => {
+            const file = input.files[0];
+            if (!file) return;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileChosen').classList.add('show');
+            document.getElementById('uploadZone').style.display = 'none';
+
+            const reader = new FileReader();
+            if (file.type === 'application/pdf') {
+                resumeText = `[PDF Resume: ${file.name}]\nNote: PDF text extraction limited in browser. Key details may include education, experience, and skills sections.`;
+            } else {
+                reader.onload = e => { resumeText = e.target.result; };
+                reader.readAsText(file);
+            }
+        };
+
+        window.clearFile = () => {
+            document.getElementById('resumeFile').value = '';
+            document.getElementById('fileChosen').classList.remove('show');
+            document.getElementById('uploadZone').style.display = 'block';
+            document.getElementById('resultsWrap').classList.remove('show');
+            resumeText = '';
+        };
+
+        // GROQ
+        async function callGroq(prompt) {
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer YOUR_GROQ_API_KEY`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.3,
+                        max_tokens: 2000
+                    })
+                });
+                if (!res.ok) { console.error(await res.json()); return null; }
+                const data = await res.json();
+                return data.choices?.[0]?.message?.content || null;
+            } catch (e) { console.error(e); return null; }
+        }
+
+        // ANALYZE
+        window.analyzeResume = async () => {
+            const role = document.getElementById('targetRole').value.trim();
+            if (!role) { document.getElementById('errRole').classList.add('show'); return; }
+            document.getElementById('errRole').classList.remove('show');
+
+            if (!resumeText) { alert('Please upload your resume first.'); return; }
+
+            // Show loading
+            document.getElementById('loadingOverlay').classList.add('show');
+            document.getElementById('resultsWrap').classList.remove('show');
+            document.getElementById('analyzeBtn').disabled = true;
+
+            const msgs = ['Extracting skills from your resume…', 'Scoring ATS compatibility…', 'Comparing with role requirements…', 'Generating improvement tips…'];
+            let mi = 0;
+            const msgEl = document.getElementById('loadingMsg');
+            const msgInt = setInterval(() => { mi = (mi + 1) % msgs.length; msgEl.textContent = msgs[mi]; }, 2000);
+
+            const jobDesc = document.getElementById('jobDesc').value.trim();
+
+            const prompt = `You are an expert ATS (Applicant Tracking System) analyst and career coach.
+
+Analyze this resume for the role of "${role}".
+
+RESUME CONTENT:
+${resumeText}
+
+${jobDesc ? `JOB DESCRIPTION:\n${jobDesc}` : ''}
+
+Return ONLY valid JSON, no markdown:
+{
+  "atsScore": <0-100>,
+  "atsVerdict": "<3-4 word verdict e.g. 'Strong Match', 'Needs Work', 'Critical Gaps'>",
+  "atsSummary": "<2 sentences on overall ATS compatibility>",
+  "extractedSkills": ["<skill1>","<skill2>","<skill3>","<skill4>","<skill5>","<skill6>","<skill7>","<skill8>"],
+  "missingSkills": ["<skill1>","<skill2>","<skill3>","<skill4>","<skill5>"],
+  "roleMatch": [
+    {"category":"<e.g. Technical Skills>","score":<0-100>,"note":"<1 line>"},
+    {"category":"<e.g. Experience Level>","score":<0-100>,"note":"<1 line>"},
+    {"category":"<e.g. Keywords>","score":<0-100>,"note":"<1 line>"},
+    {"category":"<e.g. Education>","score":<0-100>,"note":"<1 line>"}
+  ],
+  "improvements": [
+    {"title":"<improvement title>","description":"<specific actionable advice>","priority":"high"},
+    {"title":"<improvement title>","description":"<specific actionable advice>","priority":"high"},
+    {"title":"<improvement title>","description":"<specific actionable advice>","priority":"medium"},
+    {"title":"<improvement title>","description":"<specific actionable advice>","priority":"medium"},
+    {"title":"<improvement title>","description":"<specific actionable advice>","priority":"low"}
+  ],
+  "keywordsToAdd": ["<keyword1>","<keyword2>","<keyword3>","<keyword4>","<keyword5>","<keyword6>"],
+  "keywordsTip": "<2 sentences on how to naturally incorporate these keywords>"
+}`;
+
+            const raw = await callGroq(prompt);
+            clearInterval(msgInt);
+            document.getElementById('loadingOverlay').classList.remove('show');
+            document.getElementById('analyzeBtn').disabled = false;
+
+            if (!raw) { alert('API error. Check your connection and try again.'); return; }
+
+            try {
+                const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) { alert('Parse error. Please try again.'); return; }
+                
+                // Content cleaning for robust parsing
+                const cleaned = jsonMatch[0]
+                    .replace(/:\s*\+([0-9])/g, ': $1')
+                    .replace(/,\s*([\]}])/g, '$1');
+                    
+                const d = JSON.parse(cleaned);
+                renderResults(d);
+            } catch (e) {
+                console.error(e);
+                alert('Parse error. Please try again.');
+            }
+        };
+
+        function renderResults(d) {
+            // ATS SCORE RING
+            const circumference = 339.3;
+            const offset = circumference - (d.atsScore / 100) * circumference;
+            const fill = document.getElementById('atsFill');
+            const scoreColor = d.atsScore >= 70 ? 'var(--accent)' : d.atsScore >= 40 ? 'var(--accent2)' : 'var(--brutal)';
+            fill.style.stroke = scoreColor;
+            document.getElementById('atsScoreVal').textContent = d.atsScore + '%';
+            document.getElementById('atsScoreVal').style.color = scoreColor;
+            document.getElementById('atsVerdict').textContent = d.atsVerdict;
+            document.getElementById('atsSummary').textContent = d.atsSummary;
+
+            setTimeout(() => { fill.style.strokeDashoffset = offset; }, 200);
+
+            // EXTRACTED SKILLS
+            document.getElementById('extractedSkills').innerHTML =
+                d.extractedSkills.map(s => `<span class="pill pill-good">✓ ${s}</span>`).join('');
+            document.getElementById('missingSkills').innerHTML =
+                d.missingSkills.map(s => `<span class="pill pill-crit">! ${s}</span>`).join('');
+
+            // ROLE MATCH
+            document.getElementById('roleMatch').innerHTML = d.roleMatch.map(r => `
+    <div class="bar-row">
+      <span class="bar-label" style="min-width:130px;font-size:0.78rem;">${r.category}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:0%" data-pct="${r.score}"></div></div>
+      <span class="bar-pct">${r.score}%</span>
+    </div>
+    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:0.75rem;padding-left:130px;">${r.note}</p>
+  `).join('');
+
+            // IMPROVEMENTS
+            const iconMap = { high: '⚠', med: '→', low: '✓' };
+            const classMap = { high: 'imp-high', medium: 'imp-med', low: 'imp-low' };
+            const priMap = { high: 'pri-high', medium: 'pri-med', low: 'pri-low' };
+            document.getElementById('improvements').innerHTML = d.improvements.map((imp, i) => `
+    <div class="improvement-item" style="animation-delay:${i * 0.08}s;">
+      <div class="imp-icon ${classMap[imp.priority] || 'imp-med'}">${iconMap[imp.priority] || '→'}</div>
+      <div class="imp-content">
+        <div class="imp-title">${imp.title}</div>
+        <div class="imp-desc">${imp.description}</div>
+      </div>
+      <span class="imp-priority ${priMap[imp.priority] || 'pri-med'}">${imp.priority}</span>
+    </div>
+  `).join('');
+
+            // KEYWORDS
+            document.getElementById('keywords').innerHTML = `
+    <div style="margin-bottom:1rem;">
+      <div style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;">Add These Keywords</div>
+      <div class="pill-row">${d.keywordsToAdd.map(k => `<span class="pill pill-rec">+ ${k}</span>`).join('')}</div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${d.keywordsTip}</p>
+  `;
+
+            document.getElementById('resultsWrap').classList.add('show');
+
+            // Animate bars
+            setTimeout(() => {
+                document.querySelectorAll('.bar-fill[data-pct]:not([data-animated])').forEach(b => {
+                    b.style.width = b.dataset.pct + '%'; b.dataset.animated = '1';
+                });
+            }, 400);
+
+            // Scroll to results
+            document.getElementById('resultsWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Career Mirror — AI Career Intelligence</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* SPLINE BACKGROUND */
+        .spline-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% + 80px);
+            z-index: 0;
+            border: none;
+            pointer-events: none;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-card,
+        .features,
+        .hero-sub,
+        .hero-title,
+        .badge {
+            position: relative;
+            z-index: 2;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            border: 1px solid rgba(127, 255, 110, 0.25);
+            background: var(--accent-dim);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            margin-bottom: 2.5rem;
+            animation: fadeUp 0.8s ease both;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
+        }
+
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: clamp(3.5rem, 9vw, 7rem);
+            font-weight: 400;
+            line-height: 0.95;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            animation: fadeUp 0.8s 0.1s ease both;
+        }
+
+        .hero-title .line2 {
+            font-style: italic;
+            color: var(--accent);
+            display: block;
+        }
+
+        .hero-sub {
+            font-size: 1rem;
+            color: var(--muted);
+            max-width: 480px;
+            line-height: 1.7;
+            margin-bottom: 3rem;
+            animation: fadeUp 0.8s 0.2s ease both;
+            font-weight: 400;
+        }
+
+        .features {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 3rem;
+            animation: fadeUp 0.8s 0.3s ease both;
+        }
+
+        .feat-chip {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .feat-chip.green {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(127, 255, 110, 0.2);
+        }
+
+        .feat-chip.blue {
+            background: var(--accent2-dim);
+            color: var(--accent2);
+            border: 1px solid rgba(110, 143, 255, 0.2);
+        }
+
+        .feat-chip.red {
+            background: var(--brutal-dim);
+            color: var(--brutal);
+            border: 1px solid rgba(255, 68, 68, 0.2);
+        }
+
+        .login-card {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 380px;
+            animation: fadeUp 0.8s 0.4s ease both;
+        }
+
+        .login-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-style: italic;
+            margin-bottom: 0.4rem;
+            text-align: center;
+        }
+
+        .login-card p {
+            font-size: 0.82rem;
+            color: var(--muted);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .google-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1.5rem;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .google-btn:hover {
+            border-color: rgba(127, 255, 110, 0.4);
+            box-shadow: 0 4px 20px rgba(127, 255, 110, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .loading-user {
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SPLINE 3D BACKGROUND -->
+    <iframe class="spline-bg" src="https://my.spline.design/claritystream-4FxgI6YMoTwbplDO2bycZPIg/" loading="lazy"></iframe>
+
+    <div class="hero">
+        <h1 class="hero-title">
+            Career
+            <span class="line2">Mirror.</span>
+        </h1>
+        <p class="hero-sub">
+            Not a form. Not a dashboard.<br>
+            An AI mentor that <em>talks</em> to you — finds your gaps, maps your future, tells you the truth.
+        </p>
+        <div class="features">
+            <span class="feat-chip green">✦ Conversational AI Coach</span>
+            <span class="feat-chip blue">⟡ What If Simulator</span>
+            <span class="feat-chip red">⚡ Brutal Honesty Mode</span>
+        </div>
+
+        <div class="login-card">
+            <h3>Get Started</h3>
+            <p>Sign in to save your analyses and track your progress.</p>
+            <button class="google-btn" onclick="handleGoogleLogin()">
+                <svg class="google-icon" viewBox="0 0 24 24">
+                    <path fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                    <path fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Continue with Google
+            </button>
+            <p class="loading-user" id="loadingUser">Signing you in…</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { loginWithGoogle, onAuth } from './firebase.js';
+
+
+
+
+        // Auth — if already logged in, redirect
+        onAuth(user => {
+            if (user) window.location.href = 'app.html';
+        });
+
+        window.handleGoogleLogin = async () => {
+            document.getElementById('loadingUser').style.display = 'block';
+            try {
+                await loginWithGoogle();
+                window.location.href = 'app.html';
+            } catch (e) {
+                document.getElementById('loadingUser').style.display = 'none';
+                alert('Login failed: ' + e.message);
+            }
+        };
+    </script>
+</body>
+
+</html>
