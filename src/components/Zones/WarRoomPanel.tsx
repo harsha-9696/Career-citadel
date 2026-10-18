@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Volume2, HelpCircle, Clock, ArrowRight, Loader2, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Volume2, HelpCircle, Clock, ArrowRight, Loader2, X, Mic, MicOff, AlertCircle } from 'lucide-react';
 import { generateInterviewQuestions, evaluateInterview } from '../../services/ai';
-import { speakAsAgent } from '../../services/voice';
+import { speakAsAgent, startSpeechRecognition, stopSpeechRecognition, isSpeechRecognitionSupported } from '../../services/voice';
 import { InterviewAnswer, InterviewEvaluation, InterviewQuestion, UserProfile } from '../../types';
 
 interface WarRoomPanelProps {
   userProfile: UserProfile;
+  missingSkills?: string[];
+  onInterviewComplete?: (evaluation: InterviewEvaluation, answers: InterviewAnswer[]) => void;
   onClose: () => void;
 }
 
-export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
+export function WarRoomPanel({ userProfile, missingSkills = [], onInterviewComplete, onClose }: WarRoomPanelProps) {
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
@@ -21,6 +23,11 @@ export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
   const [evaluation, setEvaluation] = useState<InterviewEvaluation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Speech to Text State
+  const [isListening, setIsListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
+  const stopRecRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     let interval: any;
     if (questions.length > 0 && !evaluation) {
@@ -29,6 +36,51 @@ export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
     return () => clearInterval(interval);
   }, [questions, currentIndex, evaluation]);
 
+  // Clean up mic when component unmounts or questions change
+  useEffect(() => {
+    return () => {
+      if (stopRecRef.current) {
+        stopRecRef.current();
+      }
+    };
+  }, [currentIndex]);
+
+  const toggleVoiceRecording = () => {
+    if (isListening) {
+      if (stopRecRef.current) {
+        stopRecRef.current();
+        stopRecRef.current = null;
+      }
+      setIsListening(false);
+      setInterimText('');
+    } else {
+      if (!isSpeechRecognitionSupported()) {
+        setError('Voice recognition is not supported in this browser. Please use Chrome, Edge, or Brave.');
+        return;
+      }
+
+      setError(null);
+      const stopFn = startSpeechRecognition({
+        onStart: () => setIsListening(true),
+        onInterim: (text) => setInterimText(text),
+        onFinal: (text) => {
+          setUserAnswer(prev => (prev ? prev + ' ' + text : text));
+          setInterimText('');
+        },
+        onError: (err) => {
+          setError(err);
+          setIsListening(false);
+          setInterimText('');
+        },
+        onEnd: () => {
+          setIsListening(false);
+          setInterimText('');
+        }
+      });
+      stopRecRef.current = stopFn;
+    }
+  };
+
   const handleStartInterview = async () => {
     setIsLoading(true);
     setError(null);
@@ -36,7 +88,9 @@ export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
       const qs = await generateInterviewQuestions(
         userProfile.targetRole || 'Full Stack Developer',
         userProfile.experience || 'fresher',
-        userProfile.skills.length > 0 ? userProfile.skills : ['JavaScript', 'System Architecture']
+        userProfile.skills.length > 0 ? userProfile.skills : ['JavaScript', 'System Architecture'],
+        4,
+        missingSkills
       );
 
       setQuestions(qs);
@@ -55,6 +109,11 @@ export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
   };
 
   const handleNextQuestion = async () => {
+    if (isListening && stopRecRef.current) {
+      stopRecRef.current();
+      setIsListening(false);
+    }
+
     const currentQ = questions[currentIndex];
     const newAnswers = [
       ...answers,
@@ -86,6 +145,7 @@ export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
         setEvaluation(evalResult);
         setIsEvaluating(false);
 
+        onInterviewComplete?.(evalResult, newAnswers);
         speakAsAgent('radha', `Interview complete! Overall performance score: ${evalResult.overallScore} percent.`);
       } catch (err: any) {
         setIsEvaluating(false);
@@ -120,6 +180,16 @@ export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
           </button>
         </div>
       </div>
+
+      {/* Cross-Agent Dossier Intelligence Notice */}
+      {missingSkills && missingSkills.length > 0 && !evaluation && (
+        <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2 mb-4">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <strong>Babu's Dossier Synced:</strong> Ravi is informed of your missing skills (<em>{missingSkills.slice(0, 3).join(', ')}</em>) and will test your engineering depth on them.
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg mb-4">
@@ -189,16 +259,54 @@ export function WarRoomPanel({ userProfile, onClose }: WarRoomPanelProps) {
             )}
           </div>
 
-          {/* Answer Input */}
+          {/* Answer Input + Voice Dictation Bar */}
           <div>
-            <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider mb-1">Your Answer</label>
-            <textarea
-              rows={4}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-800 focus:outline-none focus:border-purple-500 focus:bg-white resize-none"
-              placeholder="Structure your answer clearly. For technical, cover edge cases; for behavioral, use Situation-Task-Action-Result..."
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-            />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-mono text-slate-500 uppercase tracking-wider">Your Answer</label>
+              
+              {/* Hands-Free Voice Button */}
+              <button
+                type="button"
+                onClick={toggleVoiceRecording}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono transition-all ${
+                  isListening
+                    ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30 font-bold'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+                }`}
+                title="Speak your answer hands-free via microphone"
+              >
+                {isListening ? (
+                  <>
+                    <MicOff className="w-3.5 h-3.5" />
+                    <span>Listening... (Click to Stop)</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-3.5 h-3.5 text-purple-600" />
+                    <span>🎤 Speak Answer (Hands-Free)</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="relative">
+              <textarea
+                rows={4}
+                className={`w-full bg-slate-50 border rounded-lg p-3 text-sm text-slate-800 focus:outline-none focus:bg-white resize-none transition-all ${
+                  isListening ? 'border-red-400 ring-2 ring-red-100' : 'border-slate-200 focus:border-purple-500'
+                }`}
+                placeholder={isListening ? "Listening... Speak clearly into your microphone..." : "Structure your answer clearly. For technical, cover edge cases; for behavioral, use Situation-Task-Action-Result..."}
+                value={userAnswer + (interimText ? ` [${interimText}]` : '')}
+                onChange={(e) => setUserAnswer(e.target.value)}
+              />
+              
+              {isListening && (
+                <div className="absolute bottom-2.5 right-3 flex items-center gap-1 text-[11px] font-mono text-red-600 bg-white/90 px-2 py-0.5 rounded shadow-sm border border-red-200">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                  Recording Voice Live
+                </div>
+              )}
+            </div>
           </div>
 
           <button

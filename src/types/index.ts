@@ -77,3 +77,14 @@ export interface CareerSimulation {
   newOpportunities: string[];
   verdict: string;
 }
+
+export interface CitadelDossier {
+  profile: UserProfile;
+  resumeAudit: ResumeAnalysisResult | null;
+  interviewEvaluation: InterviewEvaluation | null;
+  interviewTranscript: InterviewAnswer[];
+  latestRoast: string | null;
+  simulations: CareerSimulation[];
+  overallReadinessScore: number;
+}
+

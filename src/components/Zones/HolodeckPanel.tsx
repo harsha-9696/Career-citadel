@@ -6,10 +6,11 @@ import { CareerSimulation, UserProfile } from '../../types';
 
 interface HolodeckPanelProps {
   userProfile: UserProfile;
+  onSimulationComplete?: (sim: CareerSimulation) => void;
   onClose: () => void;
 }
 
-export function HolodeckPanel({ userProfile, onClose }: HolodeckPanelProps) {
+export function HolodeckPanel({ userProfile, onSimulationComplete, onClose }: HolodeckPanelProps) {
   const [skill, setSkill] = useState('');
   const [simulations, setSimulations] = useState<CareerSimulation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +33,7 @@ export function HolodeckPanel({ userProfile, onClose }: HolodeckPanelProps) {
       setSkill('');
       setIsLoading(false);
 
+      onSimulationComplete?.(result);
       speakAsAgent('radha', `Mastering ${result.skill} shifts your readiness by ${result.scoreDelta > 0 ? '+' : ''}${result.scoreDelta} percent. ${result.verdict}`);
     } catch (err: any) {
       setIsLoading(false);

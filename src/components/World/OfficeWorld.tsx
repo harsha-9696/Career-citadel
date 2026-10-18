@@ -4,11 +4,15 @@ import { Text, Float, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { OfficeZone } from '../../types';
 import { DelegationCharacter, CharacterAnimation } from './DelegationCharacter';
+import { playFootstepSound, playChairSitSound, playChimeSound } from '../../services/sound';
 
-interface OfficeWorldProps {
+export interface OfficeWorldProps {
   onInteractStation: (zone: OfficeZone) => void;
   activeInteraction: OfficeZone | null;
   onCloseInteraction: () => void;
+  onPlayerMove?: (pos: [number, number, number], rotY: number) => void;
+  targetTeleport?: [number, number, number] | null;
+  onTeleportComplete?: () => void;
 }
 
 export interface StationData {
@@ -213,6 +217,87 @@ function RoomSign({
       >
         {roomName}
       </Text>
+    </group>
+  );
+}
+
+// ── Luxury Walnut Acoustic Wood Slat Feature Wall ──
+function AcousticWoodSlatWall({
+  position,
+  rotation = [0, 0, 0],
+  width = 6.4,
+  height = 3.4,
+  slatCount = 20,
+}: {
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  width?: number;
+  height?: number;
+  slatCount?: number;
+}) {
+  const slatWidth = (width / slatCount) * 0.55;
+  const spacing = width / slatCount;
+
+  return (
+    <group position={position} rotation={rotation}>
+      {/* Charcoal felt acoustic backdrop */}
+      <mesh receiveShadow position={[0, height / 2, -0.015]}>
+        <planeGeometry args={[width, height]} />
+        <meshStandardMaterial color="#18181b" roughness={0.9} />
+      </mesh>
+      {/* Vertical fluted walnut slats */}
+      {Array.from({ length: slatCount }).map((_, i) => (
+        <mesh
+          key={i}
+          position={[-width / 2 + (i + 0.5) * spacing, height / 2, 0.015]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[slatWidth, height, 0.03]} />
+          <meshStandardMaterial color="#543820" roughness={0.65} metalness={0.05} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ── Recessed Linear Architectural LED Ceiling Light Troughs ──
+function LinearCeilingLights() {
+  return (
+    <group position={[0, 3.82, 0]}>
+      {/* Central Promenade Dual Linear LED Channels */}
+      <mesh position={[-2.8, 0, -6]}>
+        <boxGeometry args={[0.16, 0.05, 34]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.2} />
+      </mesh>
+      <mesh position={[2.8, 0, -6]}>
+        <boxGeometry args={[0.16, 0.05, 34]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.2} />
+      </mesh>
+
+      {/* East & West Suite Transverse Lights */}
+      <mesh position={[15.5, 0, 6.0]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[0.14, 0.05, 11]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} />
+      </mesh>
+      <mesh position={[-15.5, 0, 6.0]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[0.14, 0.05, 11]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} />
+      </mesh>
+      <mesh position={[15.5, 0, -6.5]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[0.14, 0.05, 11]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} />
+      </mesh>
+      <mesh position={[-15.5, 0, -6.5]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[0.14, 0.05, 11]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} />
+      </mesh>
+
+      {/* Penthouse Executive Suite Light Bar */}
+      <mesh position={[0, 0, -19.0]}>
+        <boxGeometry args={[14, 0.05, 0.14]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.0} />
+      </mesh>
     </group>
   );
 }
@@ -589,11 +674,14 @@ function CentralLounge({ position }: { position: [number, number, number] }) {
 function CitadelArchitecture() {
   return (
     <group>
-      {/* ── Single Massive Floor Slab (Zero Shadow Acne / Zero Z-fighting) ── */}
+      {/* ── Single Massive Floor Slab with Architectural Polished Terrazzo Sheen ── */}
       <mesh position={[0, -0.1, -6]} receiveShadow>
         <boxGeometry args={[48, 0.2, 38]} />
-        <meshStandardMaterial color="#d7c4a5" roughness={0.75} />
+        <meshStandardMaterial color="#d4c3a3" roughness={0.4} metalness={0.12} />
       </mesh>
+
+      {/* ── Recessed Linear Ceiling LED Channels ── */}
+      <LinearCeilingLights />
 
       {/* ── Luxurious Room Area Rugs ── */}
       <RoomRug position={[15.5, 0, 6.0]} width={13} depth={10} color="#064e3b" />
@@ -601,6 +689,17 @@ function CitadelArchitecture() {
       <RoomRug position={[15.5, 0, -6.5]} width={13} depth={10} color="#3b0764" />
       <RoomRug position={[-15.5, 0, -6.5]} width={13} depth={10} color="#0e7490" />
       <RoomRug position={[0, 0, -19.0]} width={18} depth={10} color="#7f1d1d" />
+
+      {/* ── Architectural Walnut Wood Slat Feature Walls ── */}
+      {/* Veena's Suite East Feature Wall */}
+      <AcousticWoodSlatWall position={[23.3, 0, 6.0]} rotation={[0, -Math.PI / 2, 0]} width={7.0} height={3.6} slatCount={22} />
+      {/* Babu's Suite West Feature Wall */}
+      <AcousticWoodSlatWall position={[-23.3, 0, 6.0]} rotation={[0, Math.PI / 2, 0]} width={7.0} height={3.6} slatCount={22} />
+      {/* Radha's Strategy Pod West Feature Wall */}
+      <AcousticWoodSlatWall position={[-23.3, 0, -6.5]} rotation={[0, Math.PI / 2, 0]} width={7.0} height={3.6} slatCount={22} />
+      {/* Harsha's Penthouse Flanking Feature Walls */}
+      <AcousticWoodSlatWall position={[-14.5, 0, -24.2]} width={6.0} height={3.6} slatCount={18} />
+      <AcousticWoodSlatWall position={[14.5, 0, -24.2]} width={6.0} height={3.6} slatCount={18} />
 
       {/* ── Suite Specific Backdrops & Whiteboards ── */}
       {/* Ravi's War Room: Huge Architecture Whiteboard mounted on East wall behind him */}
@@ -758,6 +857,15 @@ function AgentStation({
   onInteract: () => void;
 }) {
   const haloRef = useRef<THREE.Mesh>(null!);
+  const [idleAnim, setIdleAnim] = useState<CharacterAnimation>('Sit_Work');
+
+  useEffect(() => {
+    const cycle = () => {
+      setIdleAnim((prev) => (prev === 'Sit_Work' ? 'Sit' : 'Sit_Work'));
+    };
+    const interval = setInterval(cycle, 7500 + station.id.length * 1200);
+    return () => clearInterval(interval);
+  }, [station.id]);
 
   useFrame(({ clock }) => {
     if (haloRef.current && isNearby) {
@@ -765,7 +873,7 @@ function AgentStation({
     }
   });
 
-  const agentAnim: CharacterAnimation = isNearby ? 'Talk' : 'Sit_Work';
+  const agentAnim: CharacterAnimation = isNearby ? 'Talk' : idleAnim;
 
   return (
     <group position={station.pos} rotation={[0, station.rotY, 0]}>
@@ -851,6 +959,9 @@ export function OfficeWorld({
   onInteractStation,
   activeInteraction,
   onCloseInteraction,
+  onPlayerMove,
+  targetTeleport,
+  onTeleportComplete,
 }: OfficeWorldProps) {
   // Spawns player at entrance looking North into the citadel (-Z direction)
   const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 8.0]);
@@ -866,6 +977,14 @@ export function OfficeWorld({
   const isDraggingRef = useRef(false);
   const dragStartXRef = useRef(0);
 
+  // Instant warp / teleport from Radar or Navigation
+  useEffect(() => {
+    if (targetTeleport) {
+      setPlayerPos(targetTeleport);
+      onTeleportComplete?.();
+    }
+  }, [targetTeleport, onTeleportComplete]);
+
   // Smoothly seat player in visitor chair when consulting agent!
   useEffect(() => {
     if (activeInteraction) {
@@ -875,10 +994,13 @@ export function OfficeWorld({
         const chair = getVisitorChairWorldPos(activeStation.id);
         setPlayerPos(chair.pos);
         setPlayerRotY(chair.rotY);
+        playChairSitSound();
+        playChimeSound();
       }
     } else {
       // Stand back up upon closing modal
       setPlayerPos([...standPosRef.current]);
+      playChairSitSound();
     }
   }, [activeInteraction]);
 
@@ -1011,6 +1133,7 @@ export function OfficeWorld({
           setIsWalking={setIsWalking}
           setNearbyStation={setNearbyStation}
           activeInteraction={activeInteraction}
+          onPlayerMove={onPlayerMove}
         />
       </Canvas>
     </div>
@@ -1029,6 +1152,7 @@ function GameController({
   setIsWalking,
   setNearbyStation,
   activeInteraction,
+  onPlayerMove,
 }: {
   keysPressed: React.MutableRefObject<{ [key: string]: boolean }>;
   cameraYawRef: React.MutableRefObject<number>;
@@ -1040,9 +1164,11 @@ function GameController({
   setIsWalking: React.Dispatch<React.SetStateAction<boolean>>;
   setNearbyStation: React.Dispatch<React.SetStateAction<StationData | null>>;
   activeInteraction: OfficeZone | null;
+  onPlayerMove?: (pos: [number, number, number], rotY: number) => void;
 }) {
   const speed = 5.2;
   const lookTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.25, 6.6));
+  const footstepTimerRef = useRef(0);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
@@ -1108,6 +1234,12 @@ function GameController({
     const rightZ = Math.sin(camYaw);
 
     if (moving) {
+      footstepTimerRef.current += dt;
+      if (footstepTimerRef.current >= 0.38) {
+        playFootstepSound();
+        footstepTimerRef.current = 0;
+      }
+
       let moveX = forwardX * fwd + rightX * strafe;
       let moveZ = forwardZ * fwd + rightZ * strafe;
 
@@ -1137,6 +1269,7 @@ function GameController({
       // Turn character smoothly into direction of motion
       const targetMoveAngle = Math.atan2(moveX, moveZ);
       setPlayerRotY((prev) => lerpAngle(prev, targetMoveAngle, 14 * dt));
+      onPlayerMove?.([newX, 0, newZ], targetMoveAngle);
 
       // Third-Person Follow: Camera smoothly swings behind character's back
       if (!isDraggingRef.current) {

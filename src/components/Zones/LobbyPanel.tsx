@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
-import { Send, User, Target, Layers, ArrowRight, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, User, Target, Layers, ArrowRight, X, Mic, MicOff } from 'lucide-react';
 import { chatWithVeena } from '../../services/ai';
-import { speakAsAgent } from '../../services/voice';
+import { speakAsAgent, startSpeechRecognition, stopSpeechRecognition, isSpeechRecognitionSupported } from '../../services/voice';
 import { OfficeZone, UserProfile } from '../../types';
 
 interface LobbyPanelProps {
   userProfile: UserProfile;
+  dossierSummary?: string;
   onProfileUpdate: (updated: Partial<UserProfile>) => void;
   onNavigateZone: (zone: OfficeZone) => void;
   onClose: () => void;
 }
 
-export function LobbyPanel({ userProfile, onProfileUpdate, onNavigateZone, onClose }: LobbyPanelProps) {
+export function LobbyPanel({ userProfile, dossierSummary, onProfileUpdate, onNavigateZone, onClose }: LobbyPanelProps) {
   const [skillInput, setSkillInput] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([
@@ -21,6 +22,35 @@ export function LobbyPanel({ userProfile, onProfileUpdate, onNavigateZone, onClo
     }
   ]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const stopRecRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (stopRecRef.current) stopRecRef.current();
+    };
+  }, []);
+
+  const toggleVoiceRecording = () => {
+    if (isListening) {
+      if (stopRecRef.current) {
+        stopRecRef.current();
+        stopRecRef.current = null;
+      }
+      setIsListening(false);
+    } else {
+      if (!isSpeechRecognitionSupported()) return;
+      const stopFn = startSpeechRecognition({
+        onStart: () => setIsListening(true),
+        onFinal: (text) => {
+          setChatInput(prev => (prev ? prev + ' ' + text : text));
+        },
+        onError: () => setIsListening(false),
+        onEnd: () => setIsListening(false),
+      });
+      stopRecRef.current = stopFn;
+    }
+  };
 
   const handleAddSkill = (e: React.KeyboardEvent) => {
     if ((e.key === 'Enter' || e.key === ',') && skillInput.trim()) {
@@ -42,12 +72,17 @@ export function LobbyPanel({ userProfile, onProfileUpdate, onNavigateZone, onClo
     const userText = chatInput.trim();
     setChatInput('');
 
+    if (isListening && stopRecRef.current) {
+      stopRecRef.current();
+      setIsListening(false);
+    }
+
     const newMsgs = [...messages, { role: 'user' as const, content: userText }];
     setMessages(newMsgs);
     setIsTyping(true);
 
     try {
-      const reply = await chatWithVeena(userText, userProfile, newMsgs);
+      const reply = await chatWithVeena(userText, userProfile, newMsgs, dossierSummary);
       setMessages([...newMsgs, { role: 'assistant', content: reply }]);
       setIsTyping(false);
 
@@ -202,15 +237,27 @@ export function LobbyPanel({ userProfile, onProfileUpdate, onNavigateZone, onClo
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <input
             type="text"
             className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white"
-            placeholder="Ask Veena for career guidance..."
+            placeholder={isListening ? "Listening... Speak to Veena..." : "Ask Veena for career guidance..."}
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
           />
+          <button
+            type="button"
+            onClick={toggleVoiceRecording}
+            className={`p-2 rounded-lg text-xs font-mono transition-all ${
+              isListening
+                ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+            }`}
+            title="Speak your question hands-free"
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-emerald-600" />}
+          </button>
           <button
             onClick={handleSendChat}
             disabled={isTyping || !chatInput.trim()}

@@ -6,10 +6,19 @@ import { UserProfile } from '../../types';
 
 interface CornerPanelProps {
   userProfile: UserProfile;
+  dossierStats?: {
+    resumeScore?: number;
+    resumeVerdict?: string;
+    interviewScore?: number;
+    interviewGrade?: string;
+    missingSkills?: string[];
+    weaknesses?: string[];
+  };
+  onRoastComplete?: (roastText: string) => void;
   onClose: () => void;
 }
 
-export function CornerPanel({ userProfile, onClose }: CornerPanelProps) {
+export function CornerPanel({ userProfile, dossierStats, onRoastComplete, onClose }: CornerPanelProps) {
   const [roast, setRoast] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,16 +27,20 @@ export function CornerPanel({ userProfile, onClose }: CornerPanelProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const text = await getBrutalRoastWithHarsha(userProfile);
+      const text = await getBrutalRoastWithHarsha(userProfile, dossierStats);
       setRoast(text);
       setIsLoading(false);
 
+      onRoastComplete?.(text);
       speakAsAgent('harsha', text.slice(0, 300));
     } catch (err: any) {
       setIsLoading(false);
       setError(err.message || 'Harsha is unavailable right now.');
     }
   };
+
+  const hasAuditMemory = dossierStats?.resumeScore !== undefined;
+  const hasInterviewMemory = dossierStats?.interviewScore !== undefined;
 
   return (
     <div className="glass-panel p-6 rounded-2xl max-w-xl w-full text-left max-h-[85vh] overflow-y-auto shadow-2xl border border-red-200">
@@ -56,6 +69,27 @@ export function CornerPanel({ userProfile, onClose }: CornerPanelProps) {
       <p className="text-xs text-slate-600 mb-4 leading-relaxed">
         Harsha does not do polite feedback. He evaluates your actual trajectory against real hiring bars at top engineering organizations. If you want sugarcoated validation, stay in the lobby.
       </p>
+
+      {/* Cross-Agent Memory Card */}
+      {(hasAuditMemory || hasInterviewMemory) && (
+        <div className="p-3 bg-slate-900 text-slate-100 rounded-xl mb-4 text-xs font-mono border border-slate-700 space-y-1">
+          <div className="text-[10px] uppercase tracking-wider text-red-400 font-bold flex items-center gap-1">
+            <span>⚡ Citadel Brain: Memory Synchronized</span>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1 text-[11px]">
+            {hasAuditMemory && (
+              <span className="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                Babu's ATS: <strong className="text-amber-400">{dossierStats?.resumeScore}%</strong> ({dossierStats?.resumeVerdict})
+              </span>
+            )}
+            {hasInterviewMemory && (
+              <span className="bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                Ravi's Interview: <strong className="text-purple-400">{dossierStats?.interviewScore}%</strong> ({dossierStats?.interviewGrade})
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Target Info preview */}
       <div className="p-3 bg-red-50/60 border border-red-150 rounded-xl mb-4 text-xs font-mono flex items-center justify-between">

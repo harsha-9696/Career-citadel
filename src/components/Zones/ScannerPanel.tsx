@@ -9,10 +9,11 @@ import confetti from 'canvas-confetti';
 interface ScannerPanelProps {
   userProfile: UserProfile;
   onProfileUpdate: (updated: Partial<UserProfile>) => void;
+  onAuditComplete?: (result: ResumeAnalysisResult) => void;
   onClose: () => void;
 }
 
-export function ScannerPanel({ userProfile, onProfileUpdate, onClose }: ScannerPanelProps) {
+export function ScannerPanel({ userProfile, onProfileUpdate, onAuditComplete, onClose }: ScannerPanelProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isAuditing, setIsAuditing] = useState(false);
@@ -56,6 +57,8 @@ export function ScannerPanel({ userProfile, onProfileUpdate, onClose }: ScannerP
       const audit = await auditResumeWithBabu(text, userProfile.targetRole || 'Software Engineer', jobDesc);
       setResult(audit);
       setIsAuditing(false);
+
+      onAuditComplete?.(audit);
 
       if (audit.extractedSkills?.length > 0) {
         onProfileUpdate({

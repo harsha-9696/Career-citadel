@@ -123,15 +123,23 @@ export async function generateInterviewQuestions(
   role: string,
   experience: string,
   skills: string[],
-  count: number = 4
+  count: number = 4,
+  missingSkills?: string[],
+  jobDesc?: string
 ): Promise<InterviewQuestion[]> {
+  const gapInstructions = missingSkills && missingSkills.length > 0 
+    ? `\nCRITICAL FORENSIC CONTEXT FROM BABU'S ATS AUDIT:\nThe candidate's resume was flagged for missing key skills: [${missingSkills.join(', ')}].\nRavi (Tech Lead) MUST directly drill the candidate on at least one or two of these exact missing competencies to test whether they actually understand them or are bluffing.\n` 
+    : '';
+
+  const jobDescContext = jobDesc ? `\nTarget Job Description:\n${jobDesc}\n` : '';
+
   const prompt = `You are orchestrating a technical interview panel with two interviewers:
-1. "ravi" - Senior Technical Architect (asking technical, architecture, systems questions)
-2. "radha" - Behavioral Lead & Director of Engineering (asking situational, STAR, leadership, conflict questions)
+1. "ravi" - Senior Technical Architect (asking deep technical, architecture, systems design questions)
+2. "radha" - Behavioral Lead & Director of Engineering (asking situational, STAR, leadership, and team conflict questions)
 
 Generate exactly ${count} alternating questions for a ${experience} candidate interviewing for "${role}".
-Candidate skills: ${skills.join(', ')}.
-
+Candidate declared skills: ${skills.join(', ')}.
+${gapInstructions}${jobDescContext}
 Return ONLY valid JSON:
 {
   "questions": [
@@ -200,20 +208,40 @@ Return ONLY valid JSON:
  */
 export async function getBrutalRoastWithHarsha(
   profile: UserProfile,
-  latestStats?: { resumeScore?: number; interviewScore?: number; missingSkills?: string[] }
+  dossierStats?: {
+    resumeScore?: number;
+    resumeVerdict?: string;
+    interviewScore?: number;
+    interviewGrade?: string;
+    missingSkills?: string[];
+    weaknesses?: string[];
+  }
 ): Promise<string> {
-  const prompt = `You are Harsha, an elite, demanding, no-bullshit Executive Engineering Partner.
+  let contextDossier = '';
+  if (dossierStats) {
+    if (dossierStats.resumeScore !== undefined) {
+      contextDossier += `\n- Babu's ATS Audit: Score ${dossierStats.resumeScore}%, Verdict: "${dossierStats.resumeVerdict || 'Audited'}"`;
+    }
+    if (dossierStats.missingSkills && dossierStats.missingSkills.length > 0) {
+      contextDossier += `\n- Missing Core Skills Identified by Babu: ${dossierStats.missingSkills.join(', ')}`;
+    }
+    if (dossierStats.interviewScore !== undefined) {
+      contextDossier += `\n- Ravi & Radha Mock Interview: Score ${dossierStats.interviewScore}%, Rating: "${dossierStats.interviewGrade || 'Evaluated'}"`;
+    }
+    if (dossierStats.weaknesses && dossierStats.weaknesses.length > 0) {
+      contextDossier += `\n- Interview Weaknesses Flagged: ${dossierStats.weaknesses.join('; ')}`;
+    }
+  }
+
+  const prompt = `You are Harsha, an elite, demanding, no-bullshit Executive Engineering Partner at a Tier-1 tech firm.
 The candidate claims they are ready for "${profile.targetRole}".
 Experience: ${profile.experience}
-Current Skills: ${profile.skills.join(', ')}
-${latestStats?.resumeScore !== undefined ? `ATS Resume Score: ${latestStats.resumeScore}%` : ''}
-${latestStats?.interviewScore !== undefined ? `Mock Interview Score: ${latestStats.interviewScore}%` : ''}
-${latestStats?.missingSkills ? `Glaring Gaps: ${latestStats.missingSkills.join(', ')}` : ''}
-
+Declared Skills: ${profile.skills.join(', ')}
+${contextDossier ? `\nCITADEL AGENT FORENSIC DOSSIER ON CANDIDATE:${contextDossier}\n` : ''}
 Deliver an uncompromising, brutally honest reality check (3-4 punchy paragraphs):
-1. Cut through their delusions and tell them why they are getting rejected or filtered right now.
-2. Call out their shallow learning habits or missing engineering depth directly.
-3. Give them a strict, uncompromising 90-day action plan that actually commands respect.
+1. Cut through their delusions. If Babu or Ravi caught specific skill gaps or interview weaknesses, call them out BY NAME with zero mercy.
+2. Call out shallow tutorial-hell habits or missing engineering depth directly.
+3. Give them a strict, uncompromising 90-day action plan that actually commands respect from senior hiring committees.
 No sugarcoating, no participation trophies. Raw truth.`;
 
   return await callGroqChat([{ role: 'user', content: prompt }], false);
@@ -252,7 +280,8 @@ Return ONLY valid JSON:
 export async function chatWithVeena(
   userMessage: string,
   profile: UserProfile,
-  chatHistory: { role: 'user' | 'assistant'; content: string }[]
+  chatHistory: { role: 'user' | 'assistant'; content: string }[],
+  dossierSummary?: string
 ): Promise<string> {
   const systemPrompt = `You are Veena, the warm, articulate, and highly intelligent Concierge of the Career Citadel.
 You guide candidates through the 3D office rooms:
@@ -265,6 +294,7 @@ Candidate Profile:
 Name: ${profile.name || 'Candidate'}
 Target Role: ${profile.targetRole || 'Not set'}
 Skills: ${profile.skills.join(', ') || 'None listed'}
+${dossierSummary ? `Candidate Progress Dossier:\n${dossierSummary}` : ''}
 
 Be concise, motivating, and steer them toward the right room based on what they need.`;
 
