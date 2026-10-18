@@ -103,7 +103,12 @@ export default function App() {
             <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-[10px] font-bold">S</kbd>
             <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-[10px] font-bold">D</kbd>
           </div>
-          <span>Move Player</span>
+          <span>Move (Third-Person)</span>
+          <span className="text-slate-300">•</span>
+          <div className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-[10px] font-bold">Drag</kbd>
+            <span>Orbit</span>
+          </div>
           <span className="text-slate-300">•</span>
           <div className="flex items-center gap-1">
             <kbd className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-300 text-[10px] font-bold">E</kbd>

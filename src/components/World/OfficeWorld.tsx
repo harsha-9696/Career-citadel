@@ -800,18 +800,49 @@ function AgentStation({
   );
 }
 
+// ── Smooth Angular Interpolation (Shortest circular arc) ──
+function lerpAngle(current: number, target: number, t: number): number {
+  let diff = (target - current) % (Math.PI * 2);
+  if (diff < -Math.PI) diff += Math.PI * 2;
+  if (diff > Math.PI) diff -= Math.PI * 2;
+  return current + diff * THREE.MathUtils.clamp(t, 0, 1);
+}
+
 // ── Main Office World Component ──
 export function OfficeWorld({
   onInteractStation,
   activeInteraction,
   onCloseInteraction,
 }: OfficeWorldProps) {
+  // Spawns player at entrance looking North into the citadel (-Z direction)
   const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 4.5]);
-  const [playerRotY, setPlayerRotY] = useState(0);
+  const [playerRotY, setPlayerRotY] = useState(Math.PI);
   const [isWalking, setIsWalking] = useState(false);
   const [nearbyStation, setNearbyStation] = useState<StationData | null>(null);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
+  const cameraYawRef = useRef<number>(Math.PI);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button === 0) {
+      isDraggingRef.current = true;
+      dragStartXRef.current = e.clientX;
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (isDraggingRef.current) {
+      const deltaX = e.clientX - dragStartXRef.current;
+      dragStartXRef.current = e.clientX;
+      cameraYawRef.current -= deltaX * 0.005;
+    }
+  };
+
+  const handlePointerUp = () => {
+    isDraggingRef.current = false;
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -839,80 +870,92 @@ export function OfficeWorld({
   }, [nearbyStation, activeInteraction, onInteractStation, onCloseInteraction]);
 
   return (
-    <Canvas
-      shadows
-      camera={{ position: [0, 12, 16], fov: 38 }}
-      className="w-full h-full"
-      style={{ background: '#e2e8f0' }}
+    <div
+      className="w-full h-full cursor-grab active:cursor-grabbing select-none"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
     >
-      {/* ── Sunlight Lighting without Shadow Acne ── */}
-      <ambientLight intensity={0.7} />
-      <hemisphereLight args={['#ffffff', '#e2e8f0', 0.6]} />
-      <directionalLight
-        position={[12, 22, 14]}
-        intensity={1.2}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-near={1.0}
-        shadow-camera-far={50}
-        shadow-camera-left={-18}
-        shadow-camera-right={18}
-        shadow-camera-top={18}
-        shadow-camera-bottom={-18}
-        shadow-bias={-0.00005}
-        shadow-normalBias={0.04}
-      />
-      <directionalLight position={[-10, 15, -10]} intensity={0.35} color="#e0f2fe" />
-
-      {/* ── Architectural Building ── */}
-      <CitadelArchitecture />
-
-      {/* Central Corridor Lounge & Greenery */}
-      <CentralLounge position={[0, 0, 1]} />
-      <Plant position={[-2.8, 0, 6.5]} />
-      <Plant position={[2.8, 0, 6.5]} />
-      <Plant position={[-2.8, 0, -1.0]} />
-      <Plant position={[2.8, 0, -1.0]} />
-
-      {/* ── 5 Agent Stations in 5 Separate Rooms ── */}
-      {STATIONS.map((station) => (
-        <AgentStation
-          key={station.id}
-          station={station}
-          isNearby={nearbyStation?.id === station.id}
-          onInteract={() => onInteractStation(station.id)}
+      <Canvas
+        shadows
+        camera={{ position: [0, 2.2, 8.1], fov: 48 }}
+        className="w-full h-full"
+        style={{ background: '#e2e8f0' }}
+      >
+        {/* ── Sunlight Lighting without Shadow Acne ── */}
+        <ambientLight intensity={0.7} />
+        <hemisphereLight args={['#ffffff', '#e2e8f0', 0.6]} />
+        <directionalLight
+          position={[12, 22, 14]}
+          intensity={1.2}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-near={1.0}
+          shadow-camera-far={50}
+          shadow-camera-left={-18}
+          shadow-camera-right={18}
+          shadow-camera-top={18}
+          shadow-camera-bottom={-18}
+          shadow-bias={-0.00005}
+          shadow-normalBias={0.04}
         />
-      ))}
+        <directionalLight position={[-10, 15, -10]} intensity={0.35} color="#e0f2fe" />
 
-      {/* ── Genuine Player Character from the-delegation ── */}
-      <group position={playerPos} rotation={[0, playerRotY, 0]}>
-        <DelegationCharacter
-          position={[0, 0, 0]}
-          color="#f59e0b"
-          animation={isWalking ? 'Walk' : 'Idle'}
-          scale={0.95}
+        {/* ── Architectural Building ── */}
+        <CitadelArchitecture />
+
+        {/* Central Corridor Lounge & Greenery */}
+        <CentralLounge position={[0, 0, 1]} />
+        <Plant position={[-2.8, 0, 6.5]} />
+        <Plant position={[2.8, 0, 6.5]} />
+        <Plant position={[-2.8, 0, -1.0]} />
+        <Plant position={[2.8, 0, -1.0]} />
+
+        {/* ── 5 Agent Stations in 5 Separate Rooms ── */}
+        {STATIONS.map((station) => (
+          <AgentStation
+            key={station.id}
+            station={station}
+            isNearby={nearbyStation?.id === station.id}
+            onInteract={() => onInteractStation(station.id)}
+          />
+        ))}
+
+        {/* ── Genuine Player Character from the-delegation ── */}
+        <group position={playerPos} rotation={[0, playerRotY, 0]}>
+          <DelegationCharacter
+            position={[0, 0, 0]}
+            color="#f59e0b"
+            animation={isWalking ? 'Walk' : 'Idle'}
+            scale={0.95}
+          />
+        </group>
+
+        {/* ── Third-Person Perspective (TPP) Controller & Camera ── */}
+        <GameController
+          keysPressed={keysPressed}
+          cameraYawRef={cameraYawRef}
+          isDraggingRef={isDraggingRef}
+          playerPos={playerPos}
+          setPlayerPos={setPlayerPos}
+          playerRotY={playerRotY}
+          setPlayerRotY={setPlayerRotY}
+          setIsWalking={setIsWalking}
+          setNearbyStation={setNearbyStation}
+          activeInteraction={activeInteraction}
         />
-      </group>
-
-      {/* ── Collision & Movement Controller ── */}
-      <GameController
-        keysPressed={keysPressed}
-        playerPos={playerPos}
-        setPlayerPos={setPlayerPos}
-        playerRotY={playerRotY}
-        setPlayerRotY={setPlayerRotY}
-        setIsWalking={setIsWalking}
-        setNearbyStation={setNearbyStation}
-        activeInteraction={activeInteraction}
-      />
-    </Canvas>
+      </Canvas>
+    </div>
   );
 }
 
-// ── Game Physics & Sliding Collision Loop ──
+// ── Game Physics & Sliding Collision Loop with Third-Person Perspective (TPP) ──
 function GameController({
   keysPressed,
+  cameraYawRef,
+  isDraggingRef,
   playerPos,
   setPlayerPos,
   playerRotY,
@@ -922,6 +965,8 @@ function GameController({
   activeInteraction,
 }: {
   keysPressed: React.MutableRefObject<{ [key: string]: boolean }>;
+  cameraYawRef: React.MutableRefObject<number>;
+  isDraggingRef: React.MutableRefObject<boolean>;
   playerPos: [number, number, number];
   setPlayerPos: React.Dispatch<React.SetStateAction<[number, number, number]>>;
   playerRotY: number;
@@ -931,32 +976,53 @@ function GameController({
   activeInteraction: OfficeZone | null;
 }) {
   const speed = 4.8;
+  const lookTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.25, 3.1));
 
   useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.1);
+
     if (activeInteraction) {
       setIsWalking(false);
       return;
     }
 
     const keys = keysPressed.current;
-    let dx = 0;
-    let dz = 0;
+    let fwd = 0;
+    let strafe = 0;
 
-    if (keys['w'] || keys['arrowup']) dz -= 1;
-    if (keys['s'] || keys['arrowdown']) dz += 1;
-    if (keys['a'] || keys['arrowleft']) dx -= 1;
-    if (keys['d'] || keys['arrowright']) dx += 1;
+    if (keys['w'] || keys['arrowup']) fwd += 1;
+    if (keys['s'] || keys['arrowdown']) fwd -= 1;
+    if (keys['d'] || keys['arrowright']) strafe += 1;
+    if (keys['a'] || keys['arrowleft']) strafe -= 1;
 
-    const moving = dx !== 0 || dz !== 0;
+    // Optional keyboard camera rotation with Q
+    if (keys['q']) {
+      cameraYawRef.current += 2.5 * dt;
+    }
+
+    const moving = fwd !== 0 || strafe !== 0;
     setIsWalking(moving);
 
-    if (moving) {
-      const len = Math.sqrt(dx * dx + dz * dz);
-      const moveX = (dx / len) * speed * delta;
-      const moveZ = (dz / len) * speed * delta;
+    // Camera yaw determines movement direction
+    const camYaw = cameraYawRef.current;
+    const forwardX = Math.sin(camYaw);
+    const forwardZ = Math.cos(camYaw);
+    const rightX = -Math.cos(camYaw);
+    const rightZ = Math.sin(camYaw);
 
-      const targetX = playerPos[0] + moveX;
-      const targetZ = playerPos[2] + moveZ;
+    if (moving) {
+      let moveX = forwardX * fwd + rightX * strafe;
+      let moveZ = forwardZ * fwd + rightZ * strafe;
+
+      const len = Math.hypot(moveX, moveZ);
+      moveX /= len;
+      moveZ /= len;
+
+      const stepX = moveX * speed * dt;
+      const stepZ = moveZ * speed * dt;
+
+      const targetX = playerPos[0] + stepX;
+      const targetZ = playerPos[2] + stepZ;
 
       // Sliding collision resolution: test X and Z independently
       let newX = playerPos[0];
@@ -971,8 +1037,16 @@ function GameController({
 
       setPlayerPos([newX, 0, newZ]);
 
-      const targetAngle = Math.atan2(dx, dz);
-      setPlayerRotY(targetAngle);
+      // Turn character smoothly into the direction of motion
+      const targetMoveAngle = Math.atan2(moveX, moveZ);
+      setPlayerRotY((prev) => lerpAngle(prev, targetMoveAngle, 14 * dt));
+
+      // Third-Person Follow: Camera smoothly swings behind character's back
+      if (!isDraggingRef.current) {
+        if (fwd >= 0) {
+          cameraYawRef.current = lerpAngle(cameraYawRef.current, targetMoveAngle, 4.2 * dt);
+        }
+      }
     }
 
     // Proximity detection to stations
@@ -986,18 +1060,40 @@ function GameController({
     }
     setNearbyStation(foundNearby);
 
-    // Smooth camera follow target (cozy isometric angle)
-    const targetCamX = playerPos[0] * 0.4;
-    const targetCamZ = playerPos[2] + 13;
-    const targetCamY = 11;
+    // ── Third-Person Perspective (TPP) Camera Positioned Behind Character ──
+    const camDist = 3.8;
+    const camHeight = 2.1;
+    const lookAheadDist = 1.4;
 
-    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, targetCamX, 0.06);
-    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetCamY, 0.06);
-    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, targetCamZ, 0.06);
+    const curYaw = cameraYawRef.current;
 
-    const lookAtTarget = new THREE.Vector3(playerPos[0] * 0.35, 0.8, playerPos[2] - 1.2);
-    state.camera.lookAt(lookAtTarget);
+    // Camera position: offset behind the character's back
+    let targetCamX = playerPos[0] - Math.sin(curYaw) * camDist;
+    const targetCamY = playerPos[1] + camHeight;
+    let targetCamZ = playerPos[2] - Math.cos(curYaw) * camDist;
+
+    // Perimeter boundary clamping: prevent clipping outside the office building
+    targetCamX = THREE.MathUtils.clamp(targetCamX, -14.2, 14.2);
+    targetCamZ = THREE.MathUtils.clamp(targetCamZ, -16.5, 7.8);
+
+    // Smooth camera damping
+    const lerpSpeed = Math.min(10 * dt, 1);
+    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, targetCamX, lerpSpeed);
+    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetCamY, lerpSpeed);
+    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, targetCamZ, lerpSpeed);
+
+    // Look-at point: just over character's shoulders looking forward into rooms
+    const targetLookX = playerPos[0] + Math.sin(curYaw) * lookAheadDist;
+    const targetLookY = playerPos[1] + 1.25;
+    const targetLookZ = playerPos[2] + Math.cos(curYaw) * lookAheadDist;
+
+    lookTargetRef.current.x = THREE.MathUtils.lerp(lookTargetRef.current.x, targetLookX, lerpSpeed);
+    lookTargetRef.current.y = THREE.MathUtils.lerp(lookTargetRef.current.y, targetLookY, lerpSpeed);
+    lookTargetRef.current.z = THREE.MathUtils.lerp(lookTargetRef.current.z, targetLookZ, lerpSpeed);
+
+    state.camera.lookAt(lookTargetRef.current);
   });
 
   return null;
 }
+
