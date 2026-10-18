@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 export type CharacterAnimation = 
@@ -46,27 +45,21 @@ function loadGLTFOnce(onSuccess: (data: { scene: THREE.Group; animations: THREE.
   if (isLoadingGLTF) return;
   isLoadingGLTF = true;
 
-  try {
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('/vendor/draco/');
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader);
-
-    loader.load(
-      '/models/character.glb',
-      (gltf) => {
-        cachedGLTF = { scene: gltf.scene, animations: gltf.animations };
-        gltfCallbacks.forEach((cb) => cb(cachedGLTF!));
-        gltfCallbacks.length = 0;
-      },
-      undefined,
-      (err) => {
-        console.warn('Fallback to procedural avatar due to model load issue:', err);
-      }
-    );
-  } catch (err) {
-    console.warn('Draco/GLTF init warning, using stylized avatar:', err);
-  }
+  const loader = new GLTFLoader();
+  loader.load(
+    '/models/character.glb',
+    (gltf) => {
+      cachedGLTF = { scene: gltf.scene, animations: gltf.animations };
+      gltfCallbacks.forEach((cb) => cb(cachedGLTF!));
+      gltfCallbacks.length = 0;
+      isLoadingGLTF = false;
+    },
+    undefined,
+    (err) => {
+      console.warn('Could not load character.glb, using fallback avatar:', err);
+      isLoadingGLTF = false;
+    }
+  );
 }
 
 export function DelegationCharacter({
@@ -76,7 +69,7 @@ export function DelegationCharacter({
   animation = 'Idle',
   hasCap = false,
   hasHeadphones = false,
-  scale = 0.95,
+  scale = 1.0,
   onClick,
 }: DelegationCharacterProps) {
   const [modelData, setModelData] = useState<{ scene: THREE.Group; animations: THREE.AnimationClip[] } | null>(cachedGLTF);
@@ -103,7 +96,7 @@ export function DelegationCharacter({
     );
   }
 
-  // Beautiful stylized procedural avatar fallback (renders instantly on frame 1)
+  // Stylish fallback while model parses
   return (
     <ProceduralAvatar
       position={position}
@@ -118,7 +111,7 @@ export function DelegationCharacter({
   );
 }
 
-// ── Rigged 3D Character from the-delegation ──
+// ── Genuine Rigged 3D Character from the-delegation ──
 function RiggedGLTFCharacter({
   modelData,
   position,
@@ -153,14 +146,14 @@ function RiggedGLTFCharacter({
         if (mesh.name === 'body') {
           mesh.material = new THREE.MeshStandardMaterial({
             color: new THREE.Color(color),
-            roughness: 0.55,
+            roughness: 0.5,
             metalness: 0.1,
           });
         } else if (mesh.name === 'cap') {
           mesh.visible = !!hasCap;
           if (hasCap) {
             mesh.material = new THREE.MeshStandardMaterial({
-              color: new THREE.Color('#1e293b'),
+              color: new THREE.Color('#0f172a'),
               roughness: 0.7,
             });
           }
@@ -169,7 +162,7 @@ function RiggedGLTFCharacter({
           if (hasHeadphones) {
             mesh.material = new THREE.MeshStandardMaterial({
               color: new THREE.Color('#0f172a'),
-              roughness: 0.3,
+              roughness: 0.2,
               metalness: 0.8,
             });
           }
@@ -186,6 +179,7 @@ function RiggedGLTFCharacter({
     const { animations } = modelData;
     if (!animations || animations.length === 0) return;
 
+    // Map requested animation name
     const clip = animations.find(
       (a) => a.name.toLowerCase() === animation.toLowerCase()
     ) || animations.find((a) => a.name === 'Idle') || animations[0];
@@ -227,7 +221,7 @@ function RiggedGLTFCharacter({
   );
 }
 
-// ── Stylized Procedural Character (Instant fallback & zero blank screen) ──
+// ── Stylized Avatar Fallback ──
 function ProceduralAvatar({
   position,
   rotation,
@@ -281,17 +275,14 @@ function ProceduralAvatar({
     >
       {/* Head Group */}
       <group ref={headRef} position={[0, 1.35, 0]}>
-        {/* Head Mesh */}
         <mesh castShadow>
           <sphereGeometry args={[0.26, 16, 16]} />
           <meshStandardMaterial color="#fed7aa" roughness={0.4} />
         </mesh>
-        {/* Hair */}
         <mesh position={[0, 0.08, -0.05]} castShadow>
           <sphereGeometry args={[0.28, 16, 16]} />
           <meshStandardMaterial color="#1e293b" roughness={0.8} />
         </mesh>
-        {/* Expressive Eyes */}
         <mesh position={[-0.09, 0.03, 0.22]}>
           <sphereGeometry args={[0.035, 8, 8]} />
           <meshBasicMaterial color="#0f172a" />
@@ -301,7 +292,6 @@ function ProceduralAvatar({
           <meshBasicMaterial color="#0f172a" />
         </mesh>
 
-        {/* Optional Baseball Cap */}
         {hasCap && (
           <group position={[0, 0.15, 0]}>
             <mesh castShadow>
@@ -315,7 +305,6 @@ function ProceduralAvatar({
           </group>
         )}
 
-        {/* Optional Over-ear Headphones */}
         {hasHeadphones && (
           <group position={[0, 0.05, 0]}>
             <mesh position={[-0.27, 0, 0]} castShadow>
@@ -330,7 +319,7 @@ function ProceduralAvatar({
         )}
       </group>
 
-      {/* Torso / Jacket */}
+      {/* Torso */}
       <mesh position={[0, isSeated ? 0.75 : 0.88, 0]} castShadow receiveShadow>
         <capsuleGeometry args={[0.22, 0.45, 8, 12]} />
         <meshStandardMaterial color={color} roughness={0.5} />
