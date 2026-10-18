@@ -880,9 +880,9 @@ function AgentStation({
 
   useEffect(() => {
     const cycle = () => {
-      setIdleAnim((prev) => (prev === 'Sit_Work' ? 'Sit' : 'Sit_Work'));
+      setIdleAnim((prev) => (prev === 'Sit_Work' ? 'Sit_Idle' : 'Sit_Work'));
     };
-    const interval = setInterval(cycle, 7500 + station.id.length * 1200);
+    const interval = setInterval(cycle, 8000 + station.id.length * 1500);
     return () => clearInterval(interval);
   }, [station.id]);
 
@@ -892,7 +892,7 @@ function AgentStation({
     }
   });
 
-  const agentAnim: CharacterAnimation = isInteracting || isNearby ? 'Talk' : idleAnim;
+  const agentAnim: CharacterAnimation = isInteracting || isNearby ? 'Sit_Idle' : idleAnim;
 
   return (
     <group position={station.pos} rotation={[0, station.rotY, 0]}>
@@ -910,6 +910,7 @@ function AgentStation({
           position={[0, 0, 0]}
           color={station.color}
           animation={agentAnim}
+          isTalking={isInteracting}
           hasCap={station.hasCap}
           hasHeadphones={station.hasHeadphones}
           onClick={onInteract}
@@ -1077,7 +1078,7 @@ export function OfficeWorld({
 
   // Full seated animation when consulting agent, otherwise walking or idle!
   const playerAnim: CharacterAnimation = activeInteraction
-    ? 'Sit'
+    ? 'Sit_Idle'
     : isWalking
     ? 'Walk'
     : 'Idle';

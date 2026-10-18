@@ -29,6 +29,7 @@ interface DelegationCharacterProps {
   onClick?: () => void;
   name?: string;
   isNearby?: boolean;
+  isTalking?: boolean;
 }
 
 // Global cached GLTF asset so it only loads once across all characters
@@ -71,6 +72,7 @@ export function DelegationCharacter({
   hasHeadphones = false,
   scale = 1.0,
   onClick,
+  isTalking = false,
 }: DelegationCharacterProps) {
   const [modelData, setModelData] = useState<{ scene: THREE.Group; animations: THREE.AnimationClip[] } | null>(cachedGLTF);
 
@@ -92,6 +94,7 @@ export function DelegationCharacter({
         hasHeadphones={hasHeadphones}
         scale={scale}
         onClick={onClick}
+        isTalking={isTalking}
       />
     );
   }
@@ -107,6 +110,7 @@ export function DelegationCharacter({
       hasHeadphones={hasHeadphones}
       scale={scale}
       onClick={onClick}
+      isTalking={isTalking}
     />
   );
 }
@@ -122,6 +126,7 @@ function RiggedGLTFCharacter({
   hasHeadphones,
   scale,
   onClick,
+  isTalking = false,
 }: {
   modelData: { scene: THREE.Group; animations: THREE.AnimationClip[] };
   position: [number, number, number];
@@ -132,6 +137,7 @@ function RiggedGLTFCharacter({
   hasHeadphones: boolean;
   scale: number;
   onClick?: () => void;
+  isTalking?: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null!);
 
@@ -271,7 +277,7 @@ function RiggedGLTFCharacter({
     }
 
     // Animated mouth when speaking / talking
-    if (animation === 'Talk' && mouthMapRef.current) {
+    if ((animation === 'Talk' || isTalking) && mouthMapRef.current) {
       talkTimerRef.current += delta;
       if (talkTimerRef.current > 0.14) {
         talkTimerRef.current = 0;
@@ -319,6 +325,7 @@ function ProceduralAvatar({
   hasHeadphones,
   scale,
   onClick,
+  isTalking = false,
 }: {
   position: [number, number, number];
   rotation: [number, number, number];
@@ -328,6 +335,7 @@ function ProceduralAvatar({
   hasHeadphones: boolean;
   scale: number;
   onClick?: () => void;
+  isTalking?: boolean;
 }) {
   const headRef = useRef<THREE.Group>(null!);
   const leftLegRef = useRef<THREE.Mesh>(null!);
@@ -338,7 +346,13 @@ function ProceduralAvatar({
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (headRef.current) {
-      headRef.current.position.y = 1.35 + Math.sin(t * 2) * 0.02;
+      // Steady seated or standing head height (no vertical jumping!)
+      headRef.current.position.y = isSeated ? 1.20 : 1.35;
+      if (isTalking) {
+        headRef.current.rotation.x = Math.sin(t * 7) * 0.04;
+      } else {
+        headRef.current.rotation.x = 0;
+      }
     }
     if (isWalking && leftLegRef.current && rightLegRef.current) {
       leftLegRef.current.rotation.x = Math.sin(t * 10) * 0.6;
