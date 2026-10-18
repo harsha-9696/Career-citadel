@@ -18,39 +18,60 @@ export function setApiKey(key: string): void {
   localStorage.setItem('citadel_groq_key', key.trim());
 }
 
+const GROQ_MODELS = [
+  'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
+  'qwen/qwen3.8-27b',
+  'llama-3.3-70b-versatile',
+];
+
 async function callGroqChat(messages: { role: string; content: string }[], jsonMode: boolean = false): Promise<string> {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new Error('Please set your free Groq API Key in settings (top right).');
   }
 
-  const payload: any = {
-    model: 'llama-3.3-70b-versatile',
-    messages,
-    temperature: jsonMode ? 0.2 : 0.7,
-    max_tokens: 2500,
-  };
+  let lastError: Error | null = null;
 
-  if (jsonMode) {
-    payload.response_format = { type: 'json_object' };
+  for (const model of GROQ_MODELS) {
+    try {
+      const payload: any = {
+        model,
+        messages,
+        temperature: jsonMode ? 0.2 : 0.7,
+        max_tokens: 2500,
+      };
+
+      if (jsonMode) {
+        payload.response_format = { type: 'json_object' };
+      }
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Groq API Error (${response.status})`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content !== undefined && content !== null) {
+        return content;
+      }
+    } catch (err: any) {
+      console.warn(`Groq model ${model} failed, trying fallback:`, err.message);
+      lastError = err;
+    }
   }
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Groq API Error (${response.status})`);
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || '';
+  throw lastError || new Error('All Groq AI models failed to respond.');
 }
 
 /**

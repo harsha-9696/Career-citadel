@@ -135,6 +135,9 @@ function RiggedGLTFCharacter({
 }) {
   const groupRef = useRef<THREE.Group>(null!);
 
+  const eyesMapRef = useRef<THREE.Texture | null>(null);
+  const mouthMapRef = useRef<THREE.Texture | null>(null);
+
   const clonedScene = useMemo(() => {
     const clone = SkeletonUtils.clone(modelData.scene) as THREE.Group;
     clone.traverse((child) => {
@@ -146,9 +149,50 @@ function RiggedGLTFCharacter({
         if (mesh.name === 'body') {
           mesh.material = new THREE.MeshStandardMaterial({
             color: new THREE.Color(color),
-            roughness: 0.5,
+            roughness: 0.55,
             metalness: 0.1,
           });
+          mesh.renderOrder = 0;
+        } else if (mesh.name === 'eyes') {
+          const originalMat = mesh.material as THREE.MeshStandardMaterial;
+          if (originalMat?.map) {
+            const eyesMap = originalMat.map.clone();
+            eyesMap.repeat.set(0.5, 0.25);
+            eyesMap.offset.set(0, 0); // col: 0, row: 3 (idle eyes)
+            eyesMap.needsUpdate = true;
+            eyesMapRef.current = eyesMap;
+
+            mesh.material = new THREE.MeshBasicMaterial({
+              map: eyesMap,
+              transparent: true,
+              depthWrite: false,
+              depthTest: true,
+              polygonOffset: true,
+              polygonOffsetFactor: -2,
+              polygonOffsetUnits: -2,
+            });
+          }
+          mesh.renderOrder = 2;
+        } else if (mesh.name === 'mouth') {
+          const originalMat = mesh.material as THREE.MeshStandardMaterial;
+          if (originalMat?.map) {
+            const mouthMap = originalMat.map.clone();
+            mouthMap.repeat.set(0.5, 0.25);
+            mouthMap.offset.set(0.5, 0); // col: 1, row: 3 (idle mouth)
+            mouthMap.needsUpdate = true;
+            mouthMapRef.current = mouthMap;
+
+            mesh.material = new THREE.MeshBasicMaterial({
+              map: mouthMap,
+              transparent: true,
+              depthWrite: false,
+              depthTest: true,
+              polygonOffset: true,
+              polygonOffsetFactor: -2,
+              polygonOffsetUnits: -2,
+            });
+          }
+          mesh.renderOrder = 2;
         } else if (mesh.name === 'cap') {
           mesh.visible = !!hasCap;
           if (hasCap) {
@@ -199,8 +243,52 @@ function RiggedGLTFCharacter({
     };
   }, [mixer, modelData, animation]);
 
+  // Expression & Blinking loop
+  const blinkTimerRef = useRef(2 + Math.random() * 3);
+  const isBlinkingRef = useRef(false);
+  const talkTimerRef = useRef(0);
+  const talkFrameRef = useRef(0);
+
   useFrame((_, delta) => {
     mixer.update(delta);
+
+    // Natural blinking
+    blinkTimerRef.current -= delta;
+    if (blinkTimerRef.current <= 0) {
+      if (!isBlinkingRef.current) {
+        isBlinkingRef.current = true;
+        blinkTimerRef.current = 0.15; // blink duration
+        if (eyesMapRef.current) {
+          eyesMapRef.current.offset.set(0.5, 0); // closed eyes frame
+        }
+      } else {
+        isBlinkingRef.current = false;
+        blinkTimerRef.current = 2.5 + Math.random() * 3.5;
+        if (eyesMapRef.current) {
+          eyesMapRef.current.offset.set(0, 0); // open eyes
+        }
+      }
+    }
+
+    // Animated mouth when speaking / talking
+    if (animation === 'Talk' && mouthMapRef.current) {
+      talkTimerRef.current += delta;
+      if (talkTimerRef.current > 0.14) {
+        talkTimerRef.current = 0;
+        talkFrameRef.current = (talkFrameRef.current + 1) % 4;
+        const frames = [
+          [0.5, 0],   // col 1, row 3
+          [0, 0],     // col 0, row 3
+          [0.5, 0.25],// col 1, row 2
+          [0, 0.25],  // col 0, row 2
+        ];
+        const [fx, fy] = frames[talkFrameRef.current];
+        mouthMapRef.current.offset.set(fx, fy);
+      }
+    } else if (mouthMapRef.current && talkFrameRef.current !== 0) {
+      talkFrameRef.current = 0;
+      mouthMapRef.current.offset.set(0.5, 0);
+    }
   });
 
   return (
