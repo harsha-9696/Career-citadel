@@ -60,6 +60,17 @@ export default function App() {
     localStorage.setItem('citadel_user_profile', JSON.stringify(dossier.profile));
   }, [dossier]);
 
+  // Global ESC key listener to guarantee immediate modal exit from any focus
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveZone(null);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   const handleProfileUpdate = (updated: Partial<UserProfile>) => {
     setDossier(prev => {
       const newProfile = { ...prev.profile, ...updated };

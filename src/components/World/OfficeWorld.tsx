@@ -107,6 +107,23 @@ export function getVisitorChairWorldPos(stationId: OfficeZone): { pos: [number, 
   };
 }
 
+// ── Calculate Exact World Position to Stand Up into Open Floor Space ──
+export function getVisitorStandWorldPos(stationId: OfficeZone): { pos: [number, number, number]; rotY: number } {
+  const station = STATIONS.find((s) => s.id === stationId);
+  if (!station) return { pos: [0, 0, 8.0], rotY: Math.PI };
+
+  const localZ = -2.3; // Cleanly steps back 2.3m into open room floor with zero collision
+  const sin = Math.sin(station.rotY);
+  const cos = Math.cos(station.rotY);
+  const worldX = station.pos[0] + localZ * sin;
+  const worldZ = station.pos[2] + localZ * cos;
+
+  return {
+    pos: [worldX, 0, worldZ],
+    rotY: station.rotY,
+  };
+}
+
 // ── Physical Collision Engine (AABB Obstacles for Expanded Citadel) ──
 interface BoxObstacle {
   minX: number;
@@ -119,17 +136,17 @@ const OBSTACLES: BoxObstacle[] = [
   // 1. Central Promenade Lounge Sofa & Coffee Table
   { minX: -2.4, maxX: 2.4, minZ: -0.8, maxZ: 1.4 },
 
-  // 2. Desks & Agent Workstations (including chairs)
+  // 2. Desks & Agent Workstations (ONLY the physical desk and back chair — visitor area is kept 100% open!)
   // Veena's Suite (Room 1)
-  { minX: 14.5, maxX: 17.8, minZ: 4.5, maxZ: 7.5 },
+  { minX: 15.8, maxX: 18.2, minZ: 4.6, maxZ: 7.4 },
   // Babu's Suite (Room 2)
-  { minX: -17.8, maxX: -14.5, minZ: 4.5, maxZ: 7.5 },
+  { minX: -18.2, maxX: -15.8, minZ: 4.6, maxZ: 7.4 },
   // Ravi's War Room (Room 3)
-  { minX: 14.5, maxX: 17.8, minZ: -8.0, maxZ: -5.0 },
+  { minX: 15.8, maxX: 18.2, minZ: -7.9, maxZ: -5.1 },
   // Radha's Pod (Room 4)
-  { minX: -17.8, maxX: -14.5, minZ: -8.0, maxZ: -5.0 },
+  { minX: -18.2, maxX: -15.8, minZ: -7.9, maxZ: -5.1 },
   // Harsha's Executive Penthouse Desk (Room 5)
-  { minX: -2.8, maxX: 2.8, minZ: -21.2, maxZ: -17.8 },
+  { minX: -2.0, maxX: 2.0, minZ: -20.8, maxZ: -18.3 },
 
   // 3. Hallway Promenade Potted Plants
   { minX: -6.4, maxX: -5.2, minZ: 6.9, maxZ: 8.1 },
@@ -850,10 +867,12 @@ function CitadelArchitecture() {
 function AgentStation({
   station,
   isNearby,
+  isInteracting = false,
   onInteract,
 }: {
   station: StationData;
   isNearby: boolean;
+  isInteracting?: boolean;
   onInteract: () => void;
 }) {
   const haloRef = useRef<THREE.Mesh>(null!);
@@ -868,17 +887,17 @@ function AgentStation({
   }, [station.id]);
 
   useFrame(({ clock }) => {
-    if (haloRef.current && isNearby) {
+    if (haloRef.current && isNearby && !isInteracting) {
       haloRef.current.rotation.z = clock.getElapsedTime() * 1.5;
     }
   });
 
-  const agentAnim: CharacterAnimation = isNearby ? 'Talk' : idleAnim;
+  const agentAnim: CharacterAnimation = isInteracting || isNearby ? 'Talk' : idleAnim;
 
   return (
     <group position={station.pos} rotation={[0, station.rotY, 0]}>
       {/* Proximity Glowing Floor Halo */}
-      {isNearby && (
+      {isNearby && !isInteracting && (
         <mesh ref={haloRef} position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[1.8, 2.2, 32]} />
           <meshBasicMaterial color={station.color} transparent opacity={0.85} depthTest={true} />
@@ -909,8 +928,8 @@ function AgentStation({
         />
       )}
 
-      {/* Floating 3D Action Badge (positioned above desk facing candidate) */}
-      {isNearby && (
+      {/* Floating 3D Action Badge (positioned above desk facing candidate - hidden during consultation) */}
+      {isNearby && !isInteracting && (
         <Float speed={2} rotationIntensity={0.1} floatIntensity={0.2}>
           <group position={[0, 2.5, -0.2]} onClick={onInteract}>
             <mesh position={[0, 0, 0]} castShadow>
@@ -969,8 +988,8 @@ export function OfficeWorld({
   const [isWalking, setIsWalking] = useState(false);
   const [nearbyStation, setNearbyStation] = useState<StationData | null>(null);
 
-  // Track standing position prior to sitting so player returns naturally upon closing modal
-  const standPosRef = useRef<[number, number, number]>([0, 0, 8.0]);
+  // Track last active station to guarantee standing up in the open room floor
+  const lastActiveStationRef = useRef<OfficeZone | null>(null);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
   const cameraYawRef = useRef<number>(Math.PI);
@@ -985,12 +1004,12 @@ export function OfficeWorld({
     }
   }, [targetTeleport, onTeleportComplete]);
 
-  // Smoothly seat player in visitor chair when consulting agent!
+  // Smoothly seat player in visitor chair when consulting agent, and stand up into open room floor upon exit!
   useEffect(() => {
     if (activeInteraction) {
+      lastActiveStationRef.current = activeInteraction;
       const activeStation = STATIONS.find((s) => s.id === activeInteraction);
       if (activeStation) {
-        standPosRef.current = [...playerPos];
         const chair = getVisitorChairWorldPos(activeStation.id);
         setPlayerPos(chair.pos);
         setPlayerRotY(chair.rotY);
@@ -998,8 +1017,12 @@ export function OfficeWorld({
         playChimeSound();
       }
     } else {
-      // Stand back up upon closing modal
-      setPlayerPos([...standPosRef.current]);
+      // Stand back up into wide open floor space upon closing modal (zero collision entrapment!)
+      if (lastActiveStationRef.current) {
+        const stand = getVisitorStandWorldPos(lastActiveStationRef.current);
+        setPlayerPos(stand.pos);
+        setPlayerRotY(stand.rotY);
+      }
       playChairSitSound();
     }
   }, [activeInteraction]);
@@ -1025,11 +1048,15 @@ export function OfficeWorld({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      keysPressed.current[e.key.toLowerCase()] = true;
-
-      if (e.key === 'Escape' && activeInteraction) {
-        onCloseInteraction();
+      if (e.key === 'Escape') {
+        keysPressed.current = {};
+        if (activeInteraction) {
+          onCloseInteraction();
+        }
+        return;
       }
+
+      keysPressed.current[e.key.toLowerCase()] = true;
 
       if (e.key.toLowerCase() === 'e' && nearbyStation && !activeInteraction) {
         onInteractStation(nearbyStation.id);
@@ -1107,6 +1134,7 @@ export function OfficeWorld({
             key={station.id}
             station={station}
             isNearby={nearbyStation?.id === station.id}
+            isInteracting={activeInteraction === station.id}
             onInteract={() => onInteractStation(station.id)}
           />
         ))}
