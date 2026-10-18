@@ -115,7 +115,6 @@ function RoomSign({
         color={color}
         anchorX="center"
         anchorY="middle"
-        font="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2"
       >
         {roomNumber}
       </Text>
@@ -125,7 +124,6 @@ function RoomSign({
         color="#f8fafc"
         anchorX="center"
         anchorY="middle"
-        font="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2"
       >
         {roomName}
       </Text>
@@ -633,7 +631,6 @@ function AgentStation({
               color={station.color}
               anchorX="center"
               anchorY="middle"
-              font="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2"
             >
               {`[E] Consult ${station.name}`}
             </Text>
@@ -643,7 +640,6 @@ function AgentStation({
               color="#475569"
               anchorX="center"
               anchorY="middle"
-              font="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2"
             >
               {station.roomName}
             </Text>
