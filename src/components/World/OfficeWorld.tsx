@@ -11,7 +11,7 @@ interface OfficeWorldProps {
   onCloseInteraction: () => void;
 }
 
-interface StationData {
+export interface StationData {
   id: OfficeZone;
   name: string;
   role: string;
@@ -25,8 +25,8 @@ interface StationData {
   hasHeadphones?: boolean;
 }
 
-// ── 5 Agent Stations in 5 Spacious Suites (Oriented outward toward entering candidate) ──
-const STATIONS: StationData[] = [
+// ── 5 Agent Stations in 5 Spacious Suites (Agents seated behind desks facing candidates) ──
+export const STATIONS: StationData[] = [
   {
     id: 'lobby',
     name: 'Veena',
@@ -36,7 +36,7 @@ const STATIONS: StationData[] = [
     icon: '🌟',
     color: '#10b981', // emerald
     pos: [15.5, 0, 6.0],
-    rotY: Math.PI / 2, // Faces West towards doorway and candidate
+    rotY: Math.PI / 2, // Agent at East back wall (+Z), faces West towards doorway
   },
   {
     id: 'scanner',
@@ -47,7 +47,7 @@ const STATIONS: StationData[] = [
     icon: '🔍',
     color: '#3b82f6', // blue
     pos: [-15.5, 0, 6.0],
-    rotY: -Math.PI / 2, // Faces East towards doorway and candidate
+    rotY: -Math.PI / 2, // Agent at West back wall (+Z), faces East towards doorway
     hasCap: true,
   },
   {
@@ -59,7 +59,7 @@ const STATIONS: StationData[] = [
     icon: '💻',
     color: '#8b5cf6', // purple
     pos: [15.5, 0, -6.5],
-    rotY: Math.PI / 2, // Faces West towards doorway and candidate
+    rotY: Math.PI / 2, // Agent at East back wall (+Z), faces West towards doorway
     hasHeadphones: true,
   },
   {
@@ -71,7 +71,7 @@ const STATIONS: StationData[] = [
     icon: '🧭',
     color: '#06b6d4', // cyan
     pos: [-15.5, 0, -6.5],
-    rotY: -Math.PI / 2, // Faces East towards doorway and candidate
+    rotY: -Math.PI / 2, // Agent at West back wall (+Z), faces East towards doorway
   },
   {
     id: 'corner',
@@ -82,9 +82,26 @@ const STATIONS: StationData[] = [
     icon: '⚡',
     color: '#ef4444', // red
     pos: [0, 0, -19.0],
-    rotY: Math.PI, // Faces South towards entrance and candidate
+    rotY: Math.PI, // Agent at North back wall (+Z), faces South towards entrance
   },
 ];
+
+// ── Calculate Exact World Position of Visitor Chair for Each Station ──
+export function getVisitorChairWorldPos(stationId: OfficeZone): { pos: [number, number, number]; rotY: number } {
+  const station = STATIONS.find((s) => s.id === stationId);
+  if (!station) return { pos: [0, 0, 0], rotY: 0 };
+
+  const localZ = -1.35;
+  const sin = Math.sin(station.rotY);
+  const cos = Math.cos(station.rotY);
+  const worldX = station.pos[0] + localZ * sin;
+  const worldZ = station.pos[2] + localZ * cos;
+
+  return {
+    pos: [worldX, 0, worldZ],
+    rotY: station.rotY, // Candidate faces toward desk and agent across table
+  };
+}
 
 // ── Physical Collision Engine (AABB Obstacles for Expanded Citadel) ──
 interface BoxObstacle {
@@ -100,15 +117,15 @@ const OBSTACLES: BoxObstacle[] = [
 
   // 2. Desks & Agent Workstations (including chairs)
   // Veena's Suite (Room 1)
-  { minX: 13.8, maxX: 17.5, minZ: 4.5, maxZ: 7.5 },
+  { minX: 14.5, maxX: 17.8, minZ: 4.5, maxZ: 7.5 },
   // Babu's Suite (Room 2)
-  { minX: -17.5, maxX: -13.8, minZ: 4.5, maxZ: 7.5 },
+  { minX: -17.8, maxX: -14.5, minZ: 4.5, maxZ: 7.5 },
   // Ravi's War Room (Room 3)
-  { minX: 13.8, maxX: 17.5, minZ: -8.0, maxZ: -5.0 },
+  { minX: 14.5, maxX: 17.8, minZ: -8.0, maxZ: -5.0 },
   // Radha's Pod (Room 4)
-  { minX: -17.5, maxX: -13.8, minZ: -8.0, maxZ: -5.0 },
+  { minX: -17.8, maxX: -14.5, minZ: -8.0, maxZ: -5.0 },
   // Harsha's Executive Penthouse Desk (Room 5)
-  { minX: -2.8, maxX: 2.8, minZ: -20.8, maxZ: -17.2 },
+  { minX: -2.8, maxX: 2.8, minZ: -21.2, maxZ: -17.8 },
 
   // 3. Hallway Promenade Potted Plants
   { minX: -6.4, maxX: -5.2, minZ: 6.9, maxZ: 8.1 },
@@ -140,10 +157,8 @@ const OBSTACLES: BoxObstacle[] = [
 ];
 
 function checkCollision(x: number, z: number, playerRadius = 0.38): boolean {
-  // Expanded world bounds
   if (x < -22.5 || x > 22.5 || z < -23.5 || z > 11.5) return true;
 
-  // Check against all solid obstacles
   for (const b of OBSTACLES) {
     if (
       x + playerRadius > b.minX &&
@@ -151,7 +166,7 @@ function checkCollision(x: number, z: number, playerRadius = 0.38): boolean {
       z + playerRadius > b.minZ &&
       z - playerRadius < b.maxZ
     ) {
-      return true; // Collision!
+      return true;
     }
   }
 
@@ -172,17 +187,14 @@ function RoomSign({
 }) {
   return (
     <group position={position}>
-      {/* Matte Dark Acrylic Plaque */}
       <mesh position={[0, 0, 0]} castShadow>
         <boxGeometry args={[2.8, 0.5, 0.08]} />
         <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.7} />
       </mesh>
-      {/* Glowing Neon Border Underline */}
       <mesh position={[0, -0.23, 0.045]}>
         <boxGeometry args={[2.7, 0.04, 0.02]} />
         <meshBasicMaterial color={color} />
       </mesh>
-      {/* Room Number */}
       <Text
         position={[0, 0.09, 0.05]}
         fontSize={0.12}
@@ -192,7 +204,6 @@ function RoomSign({
       >
         {roomNumber}
       </Text>
-      {/* Room Name */}
       <Text
         position={[0, -0.08, 0.05]}
         fontSize={0.095}
@@ -206,7 +217,7 @@ function RoomSign({
   );
 }
 
-// ── Crystal Clear Glass Wall with Doorway (Zero Transmission Ghosting!) ──
+// ── Crystal Clear Glass Wall with Doorway (Zero Transmission Ghosting) ──
 function GlassWallWithDoor({
   position,
   rotation = [0, 0, 0],
@@ -227,7 +238,6 @@ function GlassWallWithDoor({
 
   return (
     <group position={position} rotation={rotation}>
-      {/* Left Glass Panel (Clean tinted standard glass with ZERO double-vision ghosting) */}
       <mesh position={[-width / 2 + sideWidth / 2, height / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[sideWidth, height, 0.08]} />
         <meshStandardMaterial
@@ -239,7 +249,6 @@ function GlassWallWithDoor({
         />
       </mesh>
 
-      {/* Right Glass Panel */}
       <mesh position={[width / 2 - sideWidth / 2, height / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[sideWidth, height, 0.08]} />
         <meshStandardMaterial
@@ -251,7 +260,6 @@ function GlassWallWithDoor({
         />
       </mesh>
 
-      {/* Top Header Lintel above Doorway */}
       <mesh position={[0, doorHeight + lintelHeight / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[doorWidth, lintelHeight, 0.08]} />
         <meshStandardMaterial
@@ -263,7 +271,6 @@ function GlassWallWithDoor({
         />
       </mesh>
 
-      {/* Modern Charcoal Steel Door Frame Mullions */}
       <mesh position={[-doorWidth / 2, doorHeight / 2, 0]} castShadow>
         <boxGeometry args={[0.08, doorHeight, 0.12]} />
         <meshStandardMaterial color="#1e293b" roughness={0.4} metalness={0.6} />
@@ -290,12 +297,10 @@ function SolidWall({
 }) {
   return (
     <group position={position}>
-      {/* Main Wall Slab */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={args} />
         <meshStandardMaterial color="#f8fafc" roughness={0.85} />
       </mesh>
-      {/* Baseboard Trim */}
       <mesh position={[0, -args[1] / 2 + 0.08, 0]}>
         <boxGeometry args={[args[0] + 0.02, 0.16, args[2] + 0.02]} />
         <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
@@ -328,17 +333,14 @@ function RoomRug({
 function Plant({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      {/* Modern Ceramic Pot */}
       <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[0.32, 0.22, 0.8, 16]} />
         <meshStandardMaterial color="#ffffff" roughness={0.2} />
       </mesh>
-      {/* Soil */}
       <mesh position={[0, 0.79, 0]}>
         <cylinderGeometry args={[0.3, 0.3, 0.03, 16]} />
         <meshStandardMaterial color="#271c19" roughness={0.9} />
       </mesh>
-      {/* Lush Foliage */}
       <mesh position={[0, 1.3, 0]} castShadow>
         <sphereGeometry args={[0.55, 12, 12]} />
         <meshStandardMaterial color="#166534" roughness={0.6} />
@@ -380,12 +382,12 @@ function OfficeChair({
       <RoundedBox args={[0.52, 0.6, 0.06]} radius={0.03} position={[0, 0.78, 0.26]} castShadow>
         <meshStandardMaterial color={color} roughness={0.6} />
       </RoundedBox>
-      {/* Ergonomic Armrests (widened to 0.66m to guarantee zero character hip clipping) */}
-      <mesh position={[-0.32, 0.6, 0.05]} castShadow>
+      {/* Ergonomic Armrests (widened to 0.68m to guarantee zero character hip clipping) */}
+      <mesh position={[-0.34, 0.6, 0.05]} castShadow>
         <boxGeometry args={[0.06, 0.24, 0.32]} />
         <meshStandardMaterial color="#334155" metalness={0.7} />
       </mesh>
-      <mesh position={[0.32, 0.6, 0.05]} castShadow>
+      <mesh position={[0.34, 0.6, 0.05]} castShadow>
         <boxGeometry args={[0.06, 0.24, 0.32]} />
         <meshStandardMaterial color="#334155" metalness={0.7} />
       </mesh>
@@ -393,19 +395,17 @@ function OfficeChair({
   );
 }
 
-// ── Ergonomically Aligned Workstation ──
+// ── Ergonomically Aligned Workstation (Agent at +1.05m facing -Z, Visitor at -1.35m facing +Z) ──
 function WorkstationDesk({
   position,
   rotationY = 0,
   accentColor,
   monitorCount = 1,
-  hasWhiteboard = false,
 }: {
   position: [number, number, number];
   rotationY?: number;
   accentColor: string;
   monitorCount?: number;
-  hasWhiteboard?: boolean;
 }) {
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
@@ -438,18 +438,18 @@ function WorkstationDesk({
         <meshStandardMaterial color="#1e293b" roughness={0.8} />
       </mesh>
 
-      {/* Keyboard & Mouse on Desk (positioned for agent at -Z) */}
-      <mesh position={[0, 0.815, -0.15]}>
+      {/* Keyboard & Mouse on Desk (positioned for agent at +Z facing -Z) */}
+      <mesh position={[0, 0.815, 0.22]}>
         <boxGeometry args={[0.55, 0.015, 0.18]} />
         <meshStandardMaterial color="#475569" roughness={0.4} />
       </mesh>
-      <mesh position={[0.38, 0.815, -0.15]}>
+      <mesh position={[0.38, 0.815, 0.22]}>
         <boxGeometry args={[0.08, 0.02, 0.12]} />
         <meshStandardMaterial color="#475569" roughness={0.3} />
       </mesh>
 
-      {/* Monitor Display Screen (screen faces agent at -Z; back of monitor faces candidate at +Z) */}
-      <group position={[0, 0.81, 0.18]} rotation={[0, Math.PI, 0]}>
+      {/* Monitor Display Screen (screen faces agent at +Z; back faces candidate at -Z) */}
+      <group position={[0, 0.81, -0.15]}>
         <mesh position={[0, 0.14, 0]} castShadow>
           <cylinderGeometry args={[0.03, 0.03, 0.28, 8]} />
           <meshStandardMaterial color="#64748b" metalness={0.8} />
@@ -468,7 +468,7 @@ function WorkstationDesk({
 
         {/* Second Screen if requested */}
         {monitorCount > 1 && (
-          <group position={[0.65, 0.04, 0.08]} rotation={[0, -Math.PI / 6, 0]}>
+          <group position={[0.65, 0.04, -0.06]} rotation={[0, Math.PI / 6, 0]}>
             <RoundedBox args={[0.5, 0.8, 0.04]} radius={0.02} position={[0, 0.48, 0]} castShadow>
               <meshStandardMaterial color="#0f172a" roughness={0.3} />
             </RoundedBox>
@@ -480,25 +480,11 @@ function WorkstationDesk({
         )}
       </group>
 
-      {/* Dedicated Office Chair for Agent (at -0.95m, backrest behind agent, facing -Z toward desk) */}
-      <OfficeChair position={[0, 0, -0.95]} rotationY={0} color="#1e293b" />
+      {/* Dedicated Office Chair for Agent (at +1.05m behind desk, facing -Z toward candidate) */}
+      <OfficeChair position={[0, 0, 1.05]} rotationY={0} color="#1e293b" />
 
-      {/* Visitor Chair on front side facing agent (at +1.35m, rotated Math.PI to face agent) */}
-      <OfficeChair position={[0, 0, 1.35]} rotationY={Math.PI} color="#475569" />
-
-      {/* Architecture Whiteboard */}
-      {hasWhiteboard && (
-        <group position={[0, 1.5, -2.6]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[3.4, 1.8, 0.05]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.15} />
-          </mesh>
-          <mesh position={[0, 0, -0.01]}>
-            <boxGeometry args={[3.5, 1.9, 0.04]} />
-            <meshStandardMaterial color="#94a3b8" metalness={0.7} />
-          </mesh>
-        </group>
-      )}
+      {/* Dedicated Visitor Chair for Candidate (at -1.35m in front of desk, facing +Z toward agent) */}
+      <OfficeChair position={[0, 0, -1.35]} rotationY={Math.PI} color="#475569" />
     </group>
   );
 }
@@ -525,23 +511,23 @@ function ExecutivePenthouseSuite({ position }: { position: [number, number, numb
         <boxGeometry args={[1.6, 0.01, 0.7]} />
         <meshStandardMaterial color="#1e1e1e" roughness={0.7} />
       </mesh>
-      <group position={[0, 0.91, 0.15]} rotation={[0, Math.PI, 0]}>
+      <group position={[0, 0.91, -0.15]}>
         <mesh position={[0, 0.01, 0]} castShadow>
           <boxGeometry args={[0.45, 0.02, 0.3]} />
           <meshStandardMaterial color="#64748b" metalness={0.8} />
         </mesh>
-        <mesh position={[0, 0.16, -0.14]} rotation={[-0.3, 0, 0]} castShadow>
+        <mesh position={[0, 0.16, 0.14]} rotation={[0.3, 0, 0]} castShadow>
           <boxGeometry args={[0.45, 0.28, 0.02]} />
           <meshStandardMaterial color="#0f172a" metalness={0.8} />
         </mesh>
-        <mesh position={[0, 0.16, -0.128]} rotation={[-0.3, 0, 0]}>
+        <mesh position={[0, 0.16, 0.128]} rotation={[0.3, 0, 0]}>
           <planeGeometry args={[0.42, 0.25]} />
           <meshBasicMaterial color="#ef4444" />
         </mesh>
       </group>
 
-      {/* Tall High-Back Executive Leather Chair for Harsha (at -1.05m, facing South toward doorway) */}
-      <group position={[0, 0, -1.05]}>
+      {/* Tall High-Back Executive Leather Chair for Harsha (at +1.15m, facing -Z toward candidate) */}
+      <group position={[0, 0, 1.15]}>
         <mesh position={[0, 0.08, 0]} castShadow>
           <cylinderGeometry args={[0.38, 0.38, 0.04, 8]} />
           <meshStandardMaterial color="#334155" metalness={0.8} />
@@ -559,12 +545,12 @@ function ExecutivePenthouseSuite({ position }: { position: [number, number, numb
         </RoundedBox>
       </group>
 
-      {/* Luxury Visitor Armchairs */}
-      <OfficeChair position={[-0.8, 0, 1.4]} rotationY={Math.PI} color="#78350f" />
-      <OfficeChair position={[0.8, 0, 1.4]} rotationY={Math.PI} color="#78350f" />
+      {/* Luxury Visitor Armchairs (at -1.4m facing +Z toward Harsha) */}
+      <OfficeChair position={[-0.8, 0, -1.4]} rotationY={Math.PI} color="#78350f" />
+      <OfficeChair position={[0.8, 0, -1.4]} rotationY={Math.PI} color="#78350f" />
 
       {/* Executive Bookshelf Credenza Against Back Wall */}
-      <group position={[0, 1.6, -3.2]}>
+      <group position={[0, 1.6, 3.2]}>
         <mesh castShadow receiveShadow>
           <boxGeometry args={[5.8, 3.0, 0.6]} />
           <meshStandardMaterial color="#271c19" roughness={0.5} />
@@ -599,7 +585,7 @@ function CentralLounge({ position }: { position: [number, number, number] }) {
   );
 }
 
-// ── Entire Office Building Architecture (Expanded, Grand Citadel) ──
+// ── Entire Office Building Architecture (Expanded, Grand Citadel with Backdrops) ──
 function CitadelArchitecture() {
   return (
     <group>
@@ -615,6 +601,62 @@ function CitadelArchitecture() {
       <RoomRug position={[15.5, 0, -6.5]} width={13} depth={10} color="#3b0764" />
       <RoomRug position={[-15.5, 0, -6.5]} width={13} depth={10} color="#0e7490" />
       <RoomRug position={[0, 0, -19.0]} width={18} depth={10} color="#7f1d1d" />
+
+      {/* ── Suite Specific Backdrops & Whiteboards ── */}
+      {/* Ravi's War Room: Huge Architecture Whiteboard mounted on East wall behind him */}
+      <group position={[23.3, 2.0, -6.5]} rotation={[0, -Math.PI / 2, 0]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[5.2, 2.2, 0.06]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.15} />
+        </mesh>
+        <mesh position={[0, 0, -0.01]}>
+          <boxGeometry args={[5.3, 2.3, 0.05]} />
+          <meshStandardMaterial color="#64748b" metalness={0.7} />
+        </mesh>
+        <Text position={[0, 0.8, 0.04]} fontSize={0.16} color="#475569">
+          SYSTEM ARCHITECTURE // TECHNICAL WAR ROOM
+        </Text>
+      </group>
+
+      {/* Harsha's Penthouse: Skyline City Window Panorama on North wall behind him */}
+      <group position={[0, 2.3, -24.3]}>
+        <mesh receiveShadow>
+          <boxGeometry args={[16.0, 3.4, 0.05]} />
+          <meshBasicMaterial color="#090d16" />
+        </mesh>
+        {/* Futuristic Glowing Skyline Silhouettes */}
+        <mesh position={[-4.5, -0.4, 0.03]}>
+          <boxGeometry args={[1.6, 2.2, 0.02]} />
+          <meshBasicMaterial color="#1e293b" />
+        </mesh>
+        <mesh position={[-2.2, 0.1, 0.03]}>
+          <boxGeometry args={[1.4, 3.0, 0.02]} />
+          <meshBasicMaterial color="#334155" />
+        </mesh>
+        <mesh position={[0, -0.1, 0.03]}>
+          <boxGeometry args={[2.2, 2.7, 0.02]} />
+          <meshBasicMaterial color="#1e293b" />
+        </mesh>
+        <mesh position={[2.5, 0.3, 0.03]}>
+          <boxGeometry args={[1.5, 3.2, 0.02]} />
+          <meshBasicMaterial color="#334155" />
+        </mesh>
+        <mesh position={[5.0, -0.3, 0.03]}>
+          <boxGeometry args={[1.8, 2.4, 0.02]} />
+          <meshBasicMaterial color="#1e293b" />
+        </mesh>
+      </group>
+
+      {/* Babu's ATS Forensic Lab: Wall Metric Panels behind him */}
+      <group position={[-23.3, 2.0, 6.0]} rotation={[0, Math.PI / 2, 0]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[4.8, 2.2, 0.06]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.6} />
+        </mesh>
+        <Text position={[0, 0.7, 0.04]} fontSize={0.14} color="#38bdf8">
+          ATS FORENSIC AUDIT // LIVE SCAN MATRIX
+        </Text>
+      </group>
 
       {/* ── Glass Walls with Wide Doorways into 5 Separate Suites ── */}
       {/* Room 01 (Veena - East Front) */}
@@ -735,8 +777,8 @@ function AgentStation({
         </mesh>
       )}
 
-      {/* Agent is seated ergonomically at [0, 0, -0.95] facing +Z towards desk & entering candidate! */}
-      <group position={[0, 0, -0.95]} rotation={[0, Math.PI, 0]}>
+      {/* Agent is seated ergonomically behind desk at [0, 0, 1.05] facing -Z towards entering candidate! */}
+      <group position={[0, 0, station.id === 'corner' ? 1.15 : 1.05]} rotation={[0, Math.PI, 0]}>
         <DelegationCharacter
           position={[0, 0, 0]}
           color={station.color}
@@ -756,14 +798,13 @@ function AgentStation({
           position={[0, 0, 0]}
           accentColor={station.color}
           monitorCount={station.id === 'scanner' || station.id === 'warroom' ? 2 : 1}
-          hasWhiteboard={station.id === 'warroom'}
         />
       )}
 
       {/* Floating 3D Action Badge (positioned above desk facing candidate) */}
       {isNearby && (
         <Float speed={2} rotationIntensity={0.1} floatIntensity={0.2}>
-          <group position={[0, 2.5, 0.6]} onClick={onInteract}>
+          <group position={[0, 2.5, -0.2]} onClick={onInteract}>
             <mesh position={[0, 0, 0]} castShadow>
               <boxGeometry args={[2.6, 0.65, 0.08]} />
               <meshStandardMaterial color="#0f172a" roughness={0.3} />
@@ -817,10 +858,29 @@ export function OfficeWorld({
   const [isWalking, setIsWalking] = useState(false);
   const [nearbyStation, setNearbyStation] = useState<StationData | null>(null);
 
+  // Track standing position prior to sitting so player returns naturally upon closing modal
+  const standPosRef = useRef<[number, number, number]>([0, 0, 8.0]);
+
   const keysPressed = useRef<{ [key: string]: boolean }>({});
   const cameraYawRef = useRef<number>(Math.PI);
   const isDraggingRef = useRef(false);
   const dragStartXRef = useRef(0);
+
+  // Smoothly seat player in visitor chair when consulting agent!
+  useEffect(() => {
+    if (activeInteraction) {
+      const activeStation = STATIONS.find((s) => s.id === activeInteraction);
+      if (activeStation) {
+        standPosRef.current = [...playerPos];
+        const chair = getVisitorChairWorldPos(activeStation.id);
+        setPlayerPos(chair.pos);
+        setPlayerRotY(chair.rotY);
+      }
+    } else {
+      // Stand back up upon closing modal
+      setPlayerPos([...standPosRef.current]);
+    }
+  }, [activeInteraction]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button === 0) {
@@ -865,6 +925,13 @@ export function OfficeWorld({
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [nearbyStation, activeInteraction, onInteractStation, onCloseInteraction]);
+
+  // Full seated animation when consulting agent, otherwise walking or idle!
+  const playerAnim: CharacterAnimation = activeInteraction
+    ? 'Sit'
+    : isWalking
+    ? 'Walk'
+    : 'Idle';
 
   return (
     <div
@@ -922,12 +989,12 @@ export function OfficeWorld({
           />
         ))}
 
-        {/* ── Genuine Player Character from the-delegation ── */}
+        {/* ── Genuine Player Character with Seated Animation ── */}
         <group position={playerPos} rotation={[0, playerRotY, 0]}>
           <DelegationCharacter
             position={[0, 0, 0]}
             color="#f59e0b"
-            animation={isWalking ? 'Walk' : 'Idle'}
+            animation={playerAnim}
             scale={0.95}
           />
         </group>
@@ -980,8 +1047,39 @@ function GameController({
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
 
+    // ── During Active Consultation: Smooth Conversational Two-Shot Camera ──
     if (activeInteraction) {
       setIsWalking(false);
+      const activeStation = STATIONS.find((s) => s.id === activeInteraction);
+      if (activeStation) {
+        const chair = getVisitorChairWorldPos(activeStation.id);
+        const midX = (chair.pos[0] + activeStation.pos[0]) / 2;
+        const midZ = (chair.pos[2] + activeStation.pos[2]) / 2;
+
+        // Position camera to the side of table framing both seated figures
+        let camTargetX = midX;
+        let camTargetZ = midZ + 2.8;
+        if (activeStation.id === 'corner') {
+          camTargetX = midX + 2.8;
+          camTargetZ = midZ;
+        } else if (activeStation.pos[0] > 0) {
+          camTargetX = midX - 1.2;
+          camTargetZ = midZ + 2.6;
+        } else {
+          camTargetX = midX + 1.2;
+          camTargetZ = midZ + 2.6;
+        }
+
+        const lerpSpeed = Math.min(5 * dt, 1);
+        state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, camTargetX, lerpSpeed);
+        state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 1.7, lerpSpeed);
+        state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, camTargetZ, lerpSpeed);
+
+        lookTargetRef.current.x = THREE.MathUtils.lerp(lookTargetRef.current.x, midX, lerpSpeed);
+        lookTargetRef.current.y = THREE.MathUtils.lerp(lookTargetRef.current.y, 1.1, lerpSpeed);
+        lookTargetRef.current.z = THREE.MathUtils.lerp(lookTargetRef.current.z, midZ, lerpSpeed);
+        state.camera.lookAt(lookTargetRef.current);
+      }
       return;
     }
 
@@ -1036,7 +1134,7 @@ function GameController({
 
       setPlayerPos([newX, 0, newZ]);
 
-      // Turn character smoothly into the direction of motion
+      // Turn character smoothly into direction of motion
       const targetMoveAngle = Math.atan2(moveX, moveZ);
       setPlayerRotY((prev) => lerpAngle(prev, targetMoveAngle, 14 * dt));
 
