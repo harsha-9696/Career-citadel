@@ -123,6 +123,16 @@ export function downloadDossierMarkdown(dossier: CitadelDossier): void {
   URL.revokeObjectURL(url);
 }
 
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function printDossierExecutiveReport(dossier: CitadelDossier): void {
   const readiness = calculateReadinessScore(dossier);
   const p = dossier.profile;
@@ -130,6 +140,10 @@ export function printDossierExecutiveReport(dossier: CitadelDossier): void {
   const interview = dossier.interviewEvaluation;
   const roast = dossier.latestRoast;
   const sims = dossier.simulations || [];
+
+  const safeName = escapeHtml(p.name || 'Candidate');
+  const safeRole = escapeHtml(p.targetRole || 'Not set');
+  const safeEducation = escapeHtml(p.education || 'N/A');
 
   const html = `
 <!DOCTYPE html>
@@ -205,8 +219,8 @@ export function printDossierExecutiveReport(dossier: CitadelDossier): void {
   <div class="header">
     <div>
       <div style="font-size: 11px; font-family: monospace; color: #64748b; letter-spacing: 2px;">THE CAREER CITADEL // FORENSIC REPORT</div>
-      <h1>${p.name || 'Candidate'} Dossier</h1>
-      <div style="color: #64748b; font-size: 13px;">Targeting: <strong>${p.targetRole || 'Not set'}</strong> (${p.experience.toUpperCase()})</div>
+      <h1>${safeName} Dossier</h1>
+      <div style="color: #64748b; font-size: 13px;">Targeting: <strong>${safeRole}</strong> (${escapeHtml(p.experience.toUpperCase())})</div>
     </div>
     <div class="badge">Citadel Readiness: ${readiness}%</div>
   </div>
@@ -214,8 +228,8 @@ export function printDossierExecutiveReport(dossier: CitadelDossier): void {
   <div class="section">
     <h2>1. Verified Profile</h2>
     <div class="card">
-      <div><strong>Education:</strong> ${p.education || 'N/A'}</div>
-      <div style="margin-top: 6px;"><strong>Skill Stack:</strong> ${p.skills.map(s => `<span class="tag">${s}</span>`).join(' ')}</div>
+      <div><strong>Education:</strong> ${safeEducation}</div>
+      <div style="margin-top: 6px;"><strong>Skill Stack:</strong> ${p.skills.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join(' ')}</div>
     </div>
   </div>
 
@@ -223,17 +237,17 @@ export function printDossierExecutiveReport(dossier: CitadelDossier): void {
     <h2>2. Babu's ATS Resume Audit</h2>
     ${audit ? `
       <div class="score-banner">
-        <strong>ATS Score: ${audit.atsScore}%</strong> — ${audit.atsVerdict}
-        <div style="margin-top: 4px; font-size: 12px; color: #475569;">${audit.atsSummary}</div>
+        <strong>ATS Score: ${audit.atsScore}%</strong> — ${escapeHtml(audit.atsVerdict)}
+        <div style="margin-top: 4px; font-size: 12px; color: #475569;">${escapeHtml(audit.atsSummary)}</div>
       </div>
       <div class="grid">
         <div class="card">
           <strong>Flagged Missing Competencies:</strong>
-          <div style="margin-top: 6px;">${audit.missingSkills.map(s => `<span class="tag" style="background:#fee2e2;color:#991b1b;">${s}</span>`).join(' ')}</div>
+          <div style="margin-top: 6px;">${audit.missingSkills.map(s => `<span class="tag" style="background:#fee2e2;color:#991b1b;">${escapeHtml(s)}</span>`).join(' ')}</div>
         </div>
         <div class="card">
           <strong>Recommended Keywords:</strong>
-          <div style="margin-top: 6px;">${audit.keywordsToAdd.map(k => `<span class="tag" style="background:#ecfdf5;color:#065f46;">${k}</span>`).join(' ')}</div>
+          <div style="margin-top: 6px;">${audit.keywordsToAdd.map(k => `<span class="tag" style="background:#ecfdf5;color:#065f46;">${escapeHtml(k)}</span>`).join(' ')}</div>
         </div>
       </div>
     ` : '<p style="font-size: 12px; color: #94a3b8;">No ATS audit conducted.</p>'}
@@ -243,17 +257,17 @@ export function printDossierExecutiveReport(dossier: CitadelDossier): void {
     <h2>3. Ravi & Radha Mock Interview</h2>
     ${interview ? `
       <div class="score-banner" style="border-left-color: #9333ea;">
-        <strong>Panel Rating: ${interview.grade} (${interview.overallScore}%)</strong>
-        <div style="margin-top: 4px; font-size: 12px; color: #475569;">${interview.summary}</div>
+        <strong>Panel Rating: ${escapeHtml(interview.grade)} (${interview.overallScore}%)</strong>
+        <div style="margin-top: 4px; font-size: 12px; color: #475569;">${escapeHtml(interview.summary)}</div>
       </div>
       <div class="grid">
         <div class="card">
           <strong>Strengths:</strong>
-          <ul style="margin: 6px 0 0 16px; padding: 0;">${interview.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+          <ul style="margin: 6px 0 0 16px; padding: 0;">${interview.strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
         </div>
         <div class="card">
           <strong>Areas for Growth:</strong>
-          <ul style="margin: 6px 0 0 16px; padding: 0;">${interview.weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
+          <ul style="margin: 6px 0 0 16px; padding: 0;">${interview.weaknesses.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>
         </div>
       </div>
     ` : '<p style="font-size: 12px; color: #94a3b8;">No mock interview conducted.</p>'}
@@ -262,7 +276,7 @@ export function printDossierExecutiveReport(dossier: CitadelDossier): void {
   <div class="section">
     <h2>4. Harsha's Executive Roast (The Corner Office)</h2>
     ${roast ? `
-      <div class="roast-quote">${roast}</div>
+      <div class="roast-quote">${escapeHtml(roast)}</div>
     ` : '<p style="font-size: 12px; color: #94a3b8;">No executive roast recorded.</p>'}
   </div>
 

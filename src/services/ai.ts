@@ -75,6 +75,38 @@ async function callGroqChat(messages: { role: string; content: string }[], jsonM
 }
 
 /**
+ * Robust JSON Parser that safely handles LLM markdown code blocks, prefixes, or trailing tokens
+ */
+function cleanAndParseJson<T>(raw: string): T {
+  let clean = raw.trim();
+  // Strip markdown code fences like ```json ... ``` or ``` ... ```
+  if (clean.startsWith('```')) {
+    clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  }
+
+  try {
+    return JSON.parse(clean);
+  } catch (initialErr) {
+    // If wrapped in surrounding commentary, extract outermost JSON object or array
+    const firstBrace = clean.indexOf('{');
+    const lastBrace = clean.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(clean.slice(firstBrace, lastBrace + 1));
+      } catch (e) {}
+    }
+    const firstBracket = clean.indexOf('[');
+    const lastBracket = clean.lastIndexOf(']');
+    if (firstBracket !== -1 && lastBracket > firstBracket) {
+      try {
+        return JSON.parse(clean.slice(firstBracket, lastBracket + 1));
+      } catch (e) {}
+    }
+    throw initialErr;
+  }
+}
+
+/**
  * BABU: Forensic ATS Resume Auditor
  */
 export async function auditResumeWithBabu(
@@ -113,7 +145,7 @@ Return ONLY valid JSON matching this exact structure:
 }`;
 
   const raw = await callGroqChat([{ role: 'user', content: prompt }], true);
-  return JSON.parse(raw);
+  return cleanAndParseJson<ResumeAnalysisResult>(raw);
 }
 
 /**
@@ -161,7 +193,7 @@ Return ONLY valid JSON:
 }`;
 
   const raw = await callGroqChat([{ role: 'user', content: prompt }], true);
-  const parsed = JSON.parse(raw);
+  const parsed = cleanAndParseJson<{ questions: InterviewQuestion[] }>(raw);
   return parsed.questions;
 }
 
@@ -200,7 +232,7 @@ Return ONLY valid JSON:
 }`;
 
   const raw = await callGroqChat([{ role: 'user', content: prompt }], true);
-  return JSON.parse(raw);
+  return cleanAndParseJson<InterviewEvaluation>(raw);
 }
 
 /**
@@ -271,7 +303,7 @@ Return ONLY valid JSON:
 }`;
 
   const raw = await callGroqChat([{ role: 'user', content: prompt }], true);
-  return JSON.parse(raw);
+  return cleanAndParseJson<CareerSimulation>(raw);
 }
 
 /**

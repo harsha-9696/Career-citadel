@@ -30,7 +30,7 @@ export interface StationData {
 }
 
 // ── 5 Agent Stations in 5 Spacious Suites (Agents seated behind desks facing candidates) ──
-export const STATIONS: StationData[] = [
+const STATIONS: StationData[] = [
   {
     id: 'lobby',
     name: 'Veena',
@@ -91,7 +91,7 @@ export const STATIONS: StationData[] = [
 ];
 
 // ── Calculate Exact World Position of Visitor Chair for Each Station ──
-export function getVisitorChairWorldPos(stationId: OfficeZone): { pos: [number, number, number]; rotY: number } {
+function getVisitorChairWorldPos(stationId: OfficeZone): { pos: [number, number, number]; rotY: number } {
   const station = STATIONS.find((s) => s.id === stationId);
   if (!station) return { pos: [0, 0, 0], rotY: 0 };
 
@@ -108,7 +108,7 @@ export function getVisitorChairWorldPos(stationId: OfficeZone): { pos: [number, 
 }
 
 // ── Calculate Exact World Position to Stand Up into Open Floor Space ──
-export function getVisitorStandWorldPos(stationId: OfficeZone): { pos: [number, number, number]; rotY: number } {
+function getVisitorStandWorldPos(stationId: OfficeZone): { pos: [number, number, number]; rotY: number } {
   const station = STATIONS.find((s) => s.id === stationId);
   if (!station) return { pos: [0, 0, 8.0], rotY: Math.PI };
 

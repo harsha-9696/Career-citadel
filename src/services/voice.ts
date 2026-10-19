@@ -135,8 +135,10 @@ export function startSpeechRecognition(callbacks: SpeechRecognitionCallbacks): (
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
-          callbacks.onFinal(finalTranscript.trim());
+          const chunk = transcript.trim();
+          if (chunk) {
+            callbacks.onFinal(chunk);
+          }
         } else {
           interim += transcript;
           callbacks.onInterim?.(interim);
