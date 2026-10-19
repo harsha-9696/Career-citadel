@@ -33,3 +33,5 @@ pnpm-debug.log*
 
 # Reference clones
 the-delegation-ref/
+.scratch/
+

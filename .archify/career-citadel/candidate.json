@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Career Citadel — Systems Architecture & Data Flow",
+    "subtitle": "Interactive 3D Virtual Headquarters with Dual-Engine AI (Google Gemini 3.8 Flash + Groq LPU) & Citadel Brain Memory",
+    "output": "docs/career-citadel-architecture.html",
+    "quality_profile": "standard"
+  },
+  "components": [
+    { "id": "candidate", "type": "external", "label": "Candidate / Player", "sublabel": "Browser WebGL, Mic & Keys", "pos": [40, 260], "size": [160, 65] },
+    { "id": "hud", "type": "frontend", "label": "Top HUD & Telemetry", "sublabel": "Readiness, AI Engine & Radar", "pos": [260, 100], "size": [170, 65] },
+    { "id": "r3f_world", "type": "frontend", "label": "3D Canvas & World", "sublabel": "Three.js / React Three Fiber", "pos": [260, 260], "size": [170, 65] },
+    { "id": "voice_engine", "type": "frontend", "label": "Speech & Audio Engine", "sublabel": "Web Speech & Web Audio API", "pos": [260, 400], "size": [170, 65] },
+    { "id": "pdf_extractor", "type": "frontend", "label": "PDF Extraction Engine", "sublabel": "pdfjs-dist Text Assembly", "pos": [260, 540], "size": [170, 65] },
+    { "id": "char_controller", "type": "frontend", "label": "Character Controller", "sublabel": "AABB Sliding Collision Physics", "pos": [500, 260], "size": [170, 65] },
+    { "id": "veena", "type": "backend", "label": "Veena // Reception", "sublabel": "Candidate Intake & Routing", "pos": [740, 60], "size": [170, 65] },
+    { "id": "babu", "type": "backend", "label": "Babu // ATS Vault", "sublabel": "Forensic Google X-Y-Z Auditor", "pos": [740, 180], "size": [170, 65] },
+    { "id": "ravi_radha", "type": "backend", "label": "Ravi & Radha // War Room", "sublabel": "Architecture & STAR Mock Panel", "pos": [740, 300], "size": [170, 65] },
+    { "id": "harsha", "type": "backend", "label": "Harsha // Penthouse", "sublabel": "Brutal Reality Check & 90D Plan", "pos": [740, 420], "size": [170, 65] },
+    { "id": "holodeck", "type": "backend", "label": "Radha // HoloDeck", "sublabel": "Quantum Career Simulator", "pos": [740, 540], "size": [170, 65] },
+    { "id": "citadel_brain", "type": "database", "label": "Citadel Brain Memory", "sublabel": "Unified Dossier & LocalStorage", "pos": [980, 300], "size": [170, 65] },
+    { "id": "ai_orchestrator", "type": "security", "label": "AI Engine Orchestrator", "sublabel": "JSON Schema & Auto-Failover", "pos": [1210, 300], "size": [170, 65] },
+    { "id": "gemini_api", "type": "cloud", "label": "Google Gemini API", "sublabel": "gemini-3.8-flash (Primary)", "pos": [1440, 180], "size": [170, 65] },
+    { "id": "groq_api", "type": "cloud", "label": "Groq LPU Cloud", "sublabel": "qwen / gpt-oss (Fallback)", "pos": [1440, 420], "size": [170, 65] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Client Runtime (Browser 60 FPS)", "wraps": ["hud", "r3f_world", "voice_engine", "pdf_extractor", "char_controller", "citadel_brain"] },
+    { "kind": "security-group", "label": "Citadel AI Counselor Suites", "wraps": ["veena", "babu", "ravi_radha", "harsha", "holodeck"] },
+    { "kind": "region", "label": "High-Throughput Frontier LLM Cloud", "wraps": ["gemini_api", "groq_api"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "candidate", "to": "r3f_world", "label": "WASD / Orbit", "variant": "emphasis" },
+    { "id": "c2", "from": "candidate", "to": "hud" },
+    { "id": "c3", "from": "candidate", "to": "voice_engine" },
+    { "id": "c4", "from": "candidate", "to": "pdf_extractor" },
+    { "id": "c5", "from": "r3f_world", "to": "char_controller" },
+    { "id": "c6", "from": "char_controller", "to": "veena" },
+    { "id": "c7", "from": "char_controller", "to": "babu" },
+    { "id": "c8", "from": "char_controller", "to": "ravi_radha" },
+    { "id": "c9", "from": "char_controller", "to": "harsha" },
+    { "id": "c10", "from": "char_controller", "to": "holodeck" },
+    { "id": "c11", "from": "pdf_extractor", "to": "babu" },
+    { "id": "c12", "from": "veena", "to": "citadel_brain" },
+    { "id": "c13", "from": "babu", "to": "citadel_brain" },
+    { "id": "c14", "from": "ravi_radha", "to": "citadel_brain" },
+    { "id": "c15", "from": "harsha", "to": "citadel_brain" },
+    { "id": "c16", "from": "holodeck", "to": "citadel_brain" },
+    { "id": "c17", "from": "citadel_brain", "to": "hud" },
+    { "id": "c18", "from": "citadel_brain", "to": "ai_orchestrator" },
+    { "id": "c19", "from": "ai_orchestrator", "to": "gemini_api", "variant": "emphasis" },
+    { "id": "c20", "from": "ai_orchestrator", "to": "groq_api", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Interactive 3D Engine", "items": ["Three.js + React Three Fiber running at 60 FPS", "AABB collision resolution with sliding physics against 18 obstacles", "Cinematic two-shot camera interpolation upon desk approach"] },
+    { "dot": "emerald", "title": "Citadel Brain Memory", "items": ["Synchronizes state across all 5 counselors via LocalStorage", "Babu's flagged resume gaps dynamically trigger Ravi's interview questions", "Harsha's executive roast references real interview performance"] },
+    { "dot": "violet", "title": "Dual-Engine AI Intelligence", "items": ["Google Gemini 3.8 Flash with native JSON schema enforcement", "Groq LPU high-throughput open-weight models as instant fallback", "Zero-server architecture: 100% client-side PDF extraction with pdfjs-dist"] }
+  ]
+}
