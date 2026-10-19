@@ -197,27 +197,32 @@ function checkCollision(x: number, z: number, playerRadius = 0.38): boolean {
 // ── Room Entrance Signage ──
 function RoomSign({
   position,
+  rotation = [0, 0, 0],
   roomNumber,
   roomName,
   color,
 }: {
   position: [number, number, number];
+  rotation?: [number, number, number];
   roomNumber: string;
   roomName: string;
   color: string;
 }) {
   return (
-    <group position={position}>
+    <group position={position} rotation={rotation}>
+      {/* Box body - sleek dark architectural plate */}
       <mesh position={[0, 0, 0]} castShadow>
-        <boxGeometry args={[2.8, 0.5, 0.08]} />
+        <boxGeometry args={[2.8, 0.5, 0.12]} />
         <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.7} />
       </mesh>
-      <mesh position={[0, -0.23, 0.045]}>
-        <boxGeometry args={[2.7, 0.04, 0.02]} />
+
+      {/* Front Accent Stripe & Text (facing outward towards candidate) */}
+      <mesh position={[0, -0.23, 0.065]}>
+        <boxGeometry args={[2.7, 0.04, 0.01]} />
         <meshBasicMaterial color={color} />
       </mesh>
       <Text
-        position={[0, 0.09, 0.05]}
+        position={[0, 0.09, 0.065]}
         fontSize={0.12}
         color={color}
         anchorX="center"
@@ -226,7 +231,33 @@ function RoomSign({
         {roomNumber}
       </Text>
       <Text
-        position={[0, -0.08, 0.05]}
+        position={[0, -0.08, 0.065]}
+        fontSize={0.095}
+        color="#f8fafc"
+        anchorX="center"
+        anchorY="middle"
+      >
+        {roomName}
+      </Text>
+
+      {/* Back Accent Stripe & Text (facing inward into room) */}
+      <mesh position={[0, -0.23, -0.065]}>
+        <boxGeometry args={[2.7, 0.04, 0.01]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      <Text
+        position={[0, 0.09, -0.065]}
+        rotation={[0, Math.PI, 0]}
+        fontSize={0.12}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+      >
+        {roomNumber}
+      </Text>
+      <Text
+        position={[0, -0.08, -0.065]}
+        rotation={[0, Math.PI, 0]}
         fontSize={0.095}
         color="#f8fafc"
         anchorX="center"
@@ -784,7 +815,8 @@ function CitadelArchitecture() {
         doorWidth={3.6}
       />
       <RoomSign
-        position={[7.44, 2.9, 6.0]}
+        position={[7.5, 2.9, 6.0]}
+        rotation={[0, -Math.PI / 2, 0]}
         roomNumber="ROOM 01"
         roomName="Intake & Profile (Veena)"
         color="#10b981"
@@ -799,7 +831,8 @@ function CitadelArchitecture() {
         doorWidth={3.6}
       />
       <RoomSign
-        position={[-7.44, 2.9, 6.0]}
+        position={[-7.5, 2.9, 6.0]}
+        rotation={[0, Math.PI / 2, 0]}
         roomNumber="ROOM 02"
         roomName="ATS Forensic Lab (Babu)"
         color="#3b82f6"
@@ -814,7 +847,8 @@ function CitadelArchitecture() {
         doorWidth={3.6}
       />
       <RoomSign
-        position={[7.44, 2.9, -6.5]}
+        position={[7.5, 2.9, -6.5]}
+        rotation={[0, -Math.PI / 2, 0]}
         roomNumber="ROOM 03"
         roomName="Tech War Room (Ravi)"
         color="#8b5cf6"
@@ -829,7 +863,8 @@ function CitadelArchitecture() {
         doorWidth={3.6}
       />
       <RoomSign
-        position={[-7.44, 2.9, -6.5]}
+        position={[-7.5, 2.9, -6.5]}
+        rotation={[0, Math.PI / 2, 0]}
         roomNumber="ROOM 04"
         roomName="Quantum Strategy Pod (Radha)"
         color="#06b6d4"
@@ -845,6 +880,7 @@ function CitadelArchitecture() {
       />
       <RoomSign
         position={[0, 3.1, -12.94]}
+        rotation={[0, 0, 0]}
         roomNumber="ROOM 05 // PENTHOUSE"
         roomName="Executive Corner Office (Harsha)"
         color="#ef4444"
