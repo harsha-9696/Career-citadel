@@ -354,9 +354,9 @@ export function WarRoomPanel({ userProfile, missingSkills = [], onInterviewCompl
                   <span>Question {i + 1}</span>
                   <span className="font-mono text-emerald-600 font-bold">{fb.score}%</span>
                 </div>
-                <p className="text-slate-600">{fb.feedback}</p>
-                <div className="text-[11px] text-blue-700 pt-1 border-t border-slate-200">
-                  <strong>Better Approach:</strong> {fb.betterApproach}
+                <p className="text-slate-600 leading-relaxed">{fb.feedback}</p>
+                <div className="text-[11px] text-blue-800 pt-1.5 border-t border-slate-200/80 bg-blue-50/50 p-2 rounded whitespace-pre-line">
+                  <strong className="text-blue-900">Recommended Staff-Level Approach:</strong> {fb.betterApproach}
                 </div>
               </div>
             ))}

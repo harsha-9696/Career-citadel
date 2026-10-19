@@ -234,7 +234,7 @@ export function ScannerPanel({ userProfile, onProfileUpdate, onAuditComplete, on
                       {imp.priority}
                     </span>
                   </div>
-                  <p className="text-slate-600 leading-relaxed">{imp.description}</p>
+                  <p className="text-slate-700 leading-relaxed whitespace-pre-line font-mono text-[11px] bg-white/70 p-2.5 rounded-md border border-slate-200/80 mt-1.5">{imp.description}</p>
                 </div>
               ))}
             </div>
