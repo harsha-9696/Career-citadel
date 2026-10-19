@@ -141,8 +141,38 @@ export function CornerPanel({ userProfile, dossierStats, onRoastComplete, onClos
                 <Volume2 className="w-3.5 h-3.5" /> Replay Speech
               </button>
             </div>
-            <div className="text-xs text-slate-800 leading-relaxed space-y-3 whitespace-pre-line font-body">
-              {roast}
+            <div className="mt-2">
+              {(() => {
+                if (roast.includes('### ')) {
+                  const parts = roast.split(/(?=### )/g).filter((p) => p.trim());
+                  return (
+                    <div className="space-y-3">
+                      {parts.map((part, idx) => {
+                        const lines = part.trim().split('\n');
+                        const header = lines[0].replace(/^###\s*/, '').trim();
+                        const body = lines.slice(1).join('\n').trim();
+
+                        return (
+                          <div key={idx} className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-sm text-left">
+                            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-red-900 border-b border-slate-100 pb-2 mb-2">
+                              {header}
+                            </h4>
+                            <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-line space-y-2 font-sans">
+                              {body}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="text-xs text-slate-800 leading-relaxed space-y-3 whitespace-pre-line font-body p-3 bg-white rounded-xl border border-slate-200">
+                    {roast}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

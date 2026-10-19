@@ -225,18 +225,53 @@ export function ScannerPanel({ userProfile, onProfileUpdate, onAuditComplete, on
           {/* Improvements */}
           <div>
             <h3 className="text-xs font-mono text-slate-500 uppercase tracking-wider mb-2 font-semibold">Babu's Recommended Fixes</h3>
-            <div className="space-y-2">
-              {result.improvements.map((imp, i) => (
-                <div key={i} className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                  <div className="font-semibold text-slate-800 flex items-center justify-between mb-1">
-                    <span>{imp.title}</span>
-                    <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-bold">
-                      {imp.priority}
-                    </span>
+            <div className="space-y-3">
+              {result.improvements.map((imp, i) => {
+                const desc = imp.description;
+                const beforeMatch = desc.match(/BEFORE:\s*["']?([\s\S]*?)["']?(?=\n\s*AFTER:|$)/i);
+                const afterMatch = desc.match(/AFTER:\s*["']?([\s\S]*?)["']?(?=\n\s*WHY:|$)/i);
+                const whyMatch = desc.match(/WHY:\s*["']?([\s\S]*?)["']?$/i);
+
+                return (
+                  <div key={i} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs shadow-sm">
+                    <div className="font-semibold text-slate-800 flex items-center justify-between mb-1">
+                      <span>{imp.title}</span>
+                      <span className="text-[9px] uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-mono font-bold">
+                        {imp.priority} Priority
+                      </span>
+                    </div>
+
+                    {beforeMatch && afterMatch ? (
+                      <div className="space-y-2 mt-2 font-mono text-[11px]">
+                        <div className="p-2.5 rounded-lg bg-red-50/70 border border-red-200/80 text-slate-700">
+                          <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-0.5">
+                            ❌ Original / Weak Phrasing:
+                          </div>
+                          <p className="italic text-slate-600 font-sans text-xs">"{beforeMatch[1].trim()}"</p>
+                        </div>
+
+                        <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-slate-800">
+                          <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-0.5">
+                            ✅ Google X-Y-Z Senior Rewrite:
+                          </div>
+                          <p className="font-semibold text-emerald-950 font-sans text-xs">"{afterMatch[1].trim()}"</p>
+                        </div>
+
+                        {whyMatch && (
+                          <div className="p-2 rounded-lg bg-blue-50/80 border border-blue-200/80 text-blue-900 text-[10.5px]">
+                            <strong className="text-blue-950">💡 Why Recruiters Love It: </strong>
+                            <span className="font-sans text-xs">{whyMatch[1].trim()}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-slate-700 leading-relaxed whitespace-pre-line font-mono text-[11px] bg-white/70 p-2.5 rounded-md border border-slate-200/80 mt-1.5">
+                        {imp.description}
+                      </p>
+                    )}
                   </div>
-                  <p className="text-slate-700 leading-relaxed whitespace-pre-line font-mono text-[11px] bg-white/70 p-2.5 rounded-md border border-slate-200/80 mt-1.5">{imp.description}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
