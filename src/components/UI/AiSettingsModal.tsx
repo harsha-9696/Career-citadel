@@ -92,7 +92,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Google Gemini</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 leading-tight">Gemini 2.0 Flash</p>
+              <p className="text-[10px] text-slate-500 mt-1 leading-tight">Gemini 3.8 Flash</p>
             </button>
 
             <button
@@ -132,13 +132,13 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
             </div>
             <input
               type="password"
-              placeholder="AIzaSy..."
+              placeholder="AQ... or AIzaSy..."
               value={geminiKey}
               onChange={(e) => setGeminiKey(e.target.value)}
               className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500"
             />
             <div className="flex items-center justify-between mt-1.5 text-[10px] font-mono text-slate-500">
-              <span>Supports Gemini 2.0 Flash (1M tokens/min free)</span>
+              <span>Supports Gemini 3.8 Flash (1M tokens/min free)</span>
               {hasGemini ? (
                 <span className="text-emerald-600 flex items-center gap-1 font-semibold">
                   <Check className="w-3 h-3" /> Configured

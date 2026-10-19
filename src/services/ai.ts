@@ -10,7 +10,7 @@ import {
 
 // API Key Management & Configuration
 const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || 'YOUR_GROQ_API_KEY';
-const DEFAULT_GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const DEFAULT_GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY';
 
 export type AiProvider = 'auto' | 'gemini' | 'groq';
 
@@ -47,11 +47,14 @@ export function setApiKey(key: string): void {
   setGroqApiKey(key);
 }
 
-// Model Fallback Lists
+// Model Fallback Lists (Gemini 3.8 Flash is active)
 const GEMINI_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro'
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.5-flash',
+  'gemini-flash-latest',
+  'gemini-3.1-pro-preview',
+  'gemini-pro-latest',
 ];
 
 const GROQ_MODELS = [

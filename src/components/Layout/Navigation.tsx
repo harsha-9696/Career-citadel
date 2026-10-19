@@ -23,7 +23,7 @@ export function Navigation({ activeZone, dossier, onZoneSelect }: NavigationProp
 
   const engineLabel = activeProvider === 'groq' 
     ? 'Groq LPU' 
-    : (activeProvider === 'gemini' || hasGemini ? 'Gemini 2.0' : 'Groq LPU');
+    : (activeProvider === 'gemini' || hasGemini ? 'Gemini 3.8' : 'Groq LPU');
 
   const zones: { id: OfficeZone; label: string; agent: string; icon: string }[] = [
     { id: 'lobby', label: 'Reception', agent: 'Veena', icon: '🌟' },
