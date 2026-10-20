@@ -9,8 +9,8 @@ import {
 } from '../types';
 
 // API Key Management & Configuration
-const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || 'YOUR_GROQ_API_KEY';
-const DEFAULT_GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY';
+const DEFAULT_GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
+const DEFAULT_GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 export type AiProvider = 'auto' | 'gemini' | 'groq';
 
