@@ -47,20 +47,21 @@ export function setApiKey(key: string): void {
   setGroqApiKey(key);
 }
 
-// Model Fallback Lists (Gemini 3.8 Flash is active)
+// Model Fallback Lists (Google Gemini real models - fastest first)
 const GEMINI_MODELS = [
-  'gemini-3.8-flash',
-  'gemini-3.7-flash',
-  'gemini-3.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-1.5-flash',
   'gemini-flash-latest',
-  'gemini-3.1-pro-preview',
-  'gemini-pro-latest',
+  'gemini-1.5-pro',
 ];
 
 const GROQ_MODELS = [
-  'qwen/qwen3.8-27b',
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
   'openai/gpt-oss-120b',
   'openai/gpt-oss-20b',
+  'qwen/qwen3.8-27b',
 ];
 
 /**
@@ -108,7 +109,7 @@ async function callGeminiChat(
         contents,
         generationConfig: {
           temperature: jsonMode ? 0.2 : 0.7,
-          maxOutputTokens: 4096,
+          maxOutputTokens: jsonMode ? 2500 : 1200,
         }
       };
 
@@ -208,7 +209,8 @@ async function callGroqChat(
 
 /**
  * Smart Dual-Engine Orchestrator:
- * Automatically uses Google Gemini if available, or seamlessly falls back to Groq.
+ * In auto mode, prioritizes Groq LPU for ultra-fast generation (500-800 tok/s),
+ * with seamless fallback to Google Gemini (and vice-versa).
  */
 async function callAiChat(
   messages: { role: string; content: string }[],
@@ -216,6 +218,7 @@ async function callAiChat(
 ): Promise<string> {
   const provider = getActiveProvider();
   const geminiKey = getGeminiApiKey();
+  const groqKey = getGroqApiKey();
 
   if (provider === 'gemini') {
     return await callGeminiChat(messages, jsonMode);
@@ -225,15 +228,25 @@ async function callAiChat(
     return await callGroqChat(messages, jsonMode);
   }
 
-  // 'auto' mode: Prefer Gemini if key exists, otherwise fall back to Groq
+  // 'auto' mode: Prioritize Groq LPU for instant speed, with Gemini as robust fallback
+  if (groqKey) {
+    try {
+      return await callGroqChat(messages, jsonMode);
+    } catch (groqErr: any) {
+      console.warn('Groq chat failed in auto mode, falling back to Gemini:', groqErr.message);
+    }
+  }
+
   if (geminiKey) {
     try {
       return await callGeminiChat(messages, jsonMode);
     } catch (geminiErr: any) {
-      console.warn('Gemini chat failed, falling back to Groq:', geminiErr.message);
+      console.warn('Gemini chat failed in auto mode:', geminiErr.message);
+      throw geminiErr;
     }
   }
 
+  // If no specific key is present in auto, attempt Groq (will trigger key prompt if missing)
   return await callGroqChat(messages, jsonMode);
 }
 

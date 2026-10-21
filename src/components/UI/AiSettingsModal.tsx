@@ -77,7 +77,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
                 <span>Smart Auto</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 leading-tight">Gemini first, Groq fallback</p>
+              <p className="text-[10px] text-slate-500 mt-1 leading-tight">Groq speed, Gemini backup</p>
             </button>
 
             <button
@@ -92,7 +92,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Google Gemini</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 leading-tight">Gemini 3.8 Flash</p>
+              <p className="text-[10px] text-slate-500 mt-1 leading-tight">Gemini 2.0 / 1.5 Flash</p>
             </button>
 
             <button
@@ -107,7 +107,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 <Cpu className="w-3.5 h-3.5 text-purple-600" />
                 <span>Groq LPU</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1 leading-tight">High-speed inference</p>
+              <p className="text-[10px] text-slate-500 mt-1 leading-tight">Ultra-speed (800 t/s)</p>
             </button>
           </div>
         </div>
@@ -138,7 +138,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
               className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500"
             />
             <div className="flex items-center justify-between mt-1.5 text-[10px] font-mono text-slate-500">
-              <span>Supports Gemini 3.8 Flash (1M tokens/min free)</span>
+              <span>Supports Gemini 2.0 & 1.5 Flash (Fast low-latency)</span>
               {hasGemini ? (
                 <span className="text-emerald-600 flex items-center gap-1 font-semibold">
                   <Check className="w-3 h-3" /> Configured
